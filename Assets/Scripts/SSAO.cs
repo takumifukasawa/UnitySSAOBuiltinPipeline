@@ -26,6 +26,12 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
         context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
     }
 
+    public override void Init()
+    {
+        base.Init();
+        // Debug.Log("hogehoge");
+    }
+
     /// <summary>
     /// 
     /// </summary>

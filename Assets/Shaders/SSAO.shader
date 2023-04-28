@@ -35,23 +35,24 @@ Shader "Hidden/Custom/SSAO"
         float4 color = float4(1, 1, 1, 1);
 
         float4 baseColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.texcoord);
-        float4 cameraDepthNormalColor = SAMPLE_TEXTURE2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture,
-                                                         i.texcoord);
+        float4 cameraDepthNormalColor = SAMPLE_TEXTURE2D(
+            _CameraDepthNormalsTexture,
+            sampler_CameraDepthNormalsTexture,
+            i.texcoord
+        );
         float depth = DecodeFloatRG(cameraDepthNormalColor.zw);
-        float3 viewNormal = DecodeViewNormalStereo(cameraDepthNormalColor);
-        float3 worldNormal = mul((float3x3)_ViewToWorld, viewNormal);
+        float3 normal = DecodeViewNormalStereo(cameraDepthNormalColor);
+        normal = mul((float3x3)_ViewToWorld, normal);
 
         color.rgb = lerp(
             baseColor.rgb,
-            lerp(float3(depth, depth, depth), worldNormal, _DepthOrNormal),
+            lerp(float3(depth, depth, depth), normal, _DepthOrNormal),
             _Blend.xxx
         );
 
-        color.a = 1;
-
         // color.rgb = float3(depth, depth, depth);
-        color.rgb = viewNormal;
 
+        color.a = 1;
         return color;
     }
     ENDHLSL

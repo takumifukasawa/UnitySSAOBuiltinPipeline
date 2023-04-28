@@ -18,10 +18,10 @@ MonoBehaviour:
     value: 1
   blend:
     overrideState: 1
-    value: 0.278
+    value: 1
   depthOrNormal:
     overrideState: 1
-    value: 0.713
+    value: 0.16
 --- !u!114 &-666285682186096347
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -99,7 +99,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40b924e2dad56384a8df2a1e111bb675, type: 3}
   m_Name: Vignette
   m_EditorClassIdentifier: 
-  active: 0
+  active: 1
   enabled:
     overrideState: 1
     value: 1
