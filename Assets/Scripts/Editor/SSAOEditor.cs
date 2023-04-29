@@ -9,8 +9,8 @@ public sealed class SSAOEditor : PostProcessEffectEditor<SSAO>
 
     public override void OnEnable()
     {
-        m_Blend = FindParameterOverride(x => x.blend);
-        m_DepthOrNormal = FindParameterOverride(x => x.depthOrNormal);
+        m_Blend = FindParameterOverride(x => x.Blend);
+        m_DepthOrNormal = FindParameterOverride(x => x.DepthOrNormal);
     }
 
     public override void OnInspectorGUI()
