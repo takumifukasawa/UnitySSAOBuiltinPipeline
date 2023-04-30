@@ -162,10 +162,13 @@ Shader "Hidden/Custom/SSAO"
         float ld = Linear01Depth(d);
         d = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, sampler_CameraDepthTexture, i.texcoord);
 
+        float viewDepth = DecodeFloatRG(cameraDepthNormalColor.zw);
+
         color.rgb = worldPosition;
         color.rgb = viewPosition;
         color.rgb = float3(rawDepth, rawDepth, rawDepth);
         color.rgb = float3(d, d, d);
+        color.rgb = float3(viewDepth, viewDepth, viewDepth);
         // color.r = step(.07, color.r);
         // color.g = 0;
         // color.b = 0;
