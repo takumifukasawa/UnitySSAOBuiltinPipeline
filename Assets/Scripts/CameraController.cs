@@ -28,7 +28,8 @@ public class CameraController : MonoBehaviour
     {
         if (_camera != null)
         {
-            _camera.depthTextureMode = DepthTextureMode.DepthNormals;
+            // _camera.depthTextureMode = DepthTextureMode.DepthNormals;
+            _camera.depthTextureMode = DepthTextureMode.Depth;
         }
     }
 }

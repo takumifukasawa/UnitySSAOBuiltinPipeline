@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.Serialization;
@@ -25,15 +24,19 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
 
     public override void Render(PostProcessRenderContext context)
     {
-        var viewMatrix = Camera.main.cameraToWorldMatrix;
+        // var viewMatrix = Camera.main.cameraToWorldMatrix;
+        var viewMatrix = Camera.main.worldToCameraMatrix;
+        var inverseViewMatrix = Camera.main.cameraToWorldMatrix;
         var projectionMatrix = Camera.main.projectionMatrix;
+        // var viewProjectionMatrix = projectionMatrix * viewMatrix;
         var viewProjectionMatrix = projectionMatrix * viewMatrix;
         var inverseViewProjectionMatrix = viewProjectionMatrix.inverse;
+        var inverseProjectionMatrix = projectionMatrix.inverse;
+        // var inverseViewProjectionMatrix = (Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix).inverse;
 
         var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAO"));
         sheet.properties.SetFloat("_Blend", settings.Blend);
         sheet.properties.SetFloat("_DepthOrNormal", settings.DepthOrNormal);
-        sheet.properties.SetMatrix("_InverseViewMatrix", viewMatrix);
         if (!_isCreatedSamplingPoints)
         {
             _isCreatedSamplingPoints = true;
@@ -41,9 +44,11 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
             sheet.properties.SetVectorArray("_SamplingPoints", _samplingPoints);
         }
 
-        sheet.properties.SetMatrix("_ProjectionMatrix", projectionMatrix);
-        sheet.properties.SetMatrix("_InverseViewProjectionMatrix", inverseViewProjectionMatrix);
         sheet.properties.SetMatrix("_ViewProjectionMatrix", viewProjectionMatrix);
+        sheet.properties.SetMatrix("_ProjectionMatrix", projectionMatrix);
+        sheet.properties.SetMatrix("_InverseProjectionMatrix", inverseProjectionMatrix);
+        sheet.properties.SetMatrix("_InverseViewProjectionMatrix", inverseViewProjectionMatrix);
+        sheet.properties.SetMatrix("_InverseViewMatrix", inverseViewMatrix);
 
         context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
     }
