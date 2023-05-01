@@ -20,11 +20,11 @@ Shader "Hidden/Custom/SSAO"
     // start: partial include from UnityCG.cginc
     // --------------------------------------------------------------------------
 
-    inline float DecodeFloatRG(float2 enc)
-    {
-        float2 kDecodeDot = float2(1.0, 1 / 255.0);
-        return dot(enc, kDecodeDot);
-    }
+    // inline float DecodeFloatRG(float2 enc)
+    // {
+    //     float2 kDecodeDot = float2(1.0, 1 / 255.0);
+    //     return dot(enc, kDecodeDot);
+    // }
 
     // inline void DecodeDepthNormal( float4 enc, out float depth, out float3 normal )
     // {
@@ -102,6 +102,7 @@ Shader "Hidden/Custom/SSAO"
     
     float3 ReconstructWorldPositionFromDepth(float2 screenUV, float depth)
     {
+        // TODO: depthはgraphicsAPIを考慮している必要があるはず
         float4 clipPos = float4(screenUV * 2.0 - 1.0, depth, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
@@ -112,12 +113,31 @@ Shader "Hidden/Custom/SSAO"
 
     float3 ReconstructViewPositionFromDepth(float2 screenUV, float depth)
     {
+        // TODO: depthはgraphicsAPIを考慮している必要があるはず
         float4 clipPos = float4(screenUV * 2.0 - 1.0, depth, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
         #endif
         float4 worldPos = mul(_InverseProjectionMatrix, clipPos);
         return worldPos.xyz / worldPos.w;
+    }
+
+    float SampleRawDepth(float2 uv)
+    {
+        float rawDepth = SAMPLE_DEPTH_TEXTURE_LOD(
+            _CameraDepthTexture,
+            sampler_CameraDepthTexture,
+            UnityStereoTransformScreenSpaceTex(uv),
+            0
+        );
+        return rawDepth;
+    }
+
+    float SampleLinearDepth(float2 uv)
+    {
+        float rawDepth = SampleRawDepth(uv);
+        float depth = Linear01Depth(rawDepth);
+        return depth;
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -139,14 +159,15 @@ Shader "Hidden/Custom/SSAO"
         // float depth = Linear01Depth(1. - rawDepth);
 
         // 2: depth から参照する場合
-        float rawDepth = SAMPLE_DEPTH_TEXTURE_LOD(
-            _CameraDepthTexture,
-            sampler_CameraDepthTexture,
-            UnityStereoTransformScreenSpaceTex(i.texcoord),
-            0
-        );
+        float rawDepth = SampleRawDepth(i.texcoord);
+        // float rawDepth = SAMPLE_DEPTH_TEXTURE_LOD(
+        //     _CameraDepthTexture,
+        //     sampler_CameraDepthTexture,
+        //     UnityStereoTransformScreenSpaceTex(i.texcoord),
+        //     0
+        // );
 
-        float depth = Linear01Depth(rawDepth);
+        float depth = SampleLinearDepth(i.texcoord);
 
         float3 worldPosition = ReconstructWorldPositionFromDepth(i.texcoord, rawDepth);
         float3 viewPosition = ReconstructViewPositionFromDepth(i.texcoord, rawDepth);
@@ -154,13 +175,31 @@ Shader "Hidden/Custom/SSAO"
         float3 viewNormal = SampleViewNormal(i.texcoord);
         float3 worldNormal = mul((float3x3)_InverseViewMatrix, viewNormal);
 
-        color.rgb = lerp(
-            baseColor.rgb,
-            lerp(float3(depth, depth, depth), worldNormal, _DepthOrNormal),
-            _Blend.xxx
-        );
+        // color.rgb = lerp(
+        //     baseColor.rgb,
+        //     lerp(float3(depth, depth, depth), worldNormal, _DepthOrNormal),
+        //     _Blend.xxx
+        // );
+
+        int occludedCount = 0;
+
+        for(int i = 0; i < 64; i++)
+        {
+            float4 offset = _SamplingPoints[i];
+            float4 samplingWorldPosition = float4(worldPosition, 1.) + offset;
+            float4 samplingClipPosition = mul(_ViewProjectionMatrix, samplingWorldPosition);
+            float2 samplingCoord = (samplingClipPosition.xy / samplingClipPosition.w) * 0.5 + 0.5;
+            float samplingRawDepth = SampleRawDepth(samplingCoord);
+            if(rawDepth > samplingRawDepth)
+            {
+                occludedCount++;
+            }
+        }
+
+        float aoRate = (float)occludedCount / 64.0;
 
         color.rgb = worldPosition;
+        
         // color.rgb = viewPosition;
         // mask
         color.rgb = lerp(
@@ -168,6 +207,10 @@ Shader "Hidden/Custom/SSAO"
             float3(0, 0, 0),
             depth < 1. ? 0. : 1
         );
+
+        color.rgb = float3(rawDepth, rawDepth, rawDepth);
+
+        color.rgb = float3(aoRate, aoRate, aoRate);
 
         color.a = 1;
         return color;

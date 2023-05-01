@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.Serialization;
+using Random = System.Random;
 
 [Serializable]
 [PostProcess(typeof(SSAORenderer), PostProcessEvent.AfterStack, "Custom/SSAO")]
@@ -57,23 +60,25 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
     /// <returns></returns>
     static Vector4[] GetRandomPointsInUnitSphere()
     {
-        var points = new Vector4[SAMPLING_POINTS_NUM];
+        var points = new List<Vector4>();
         var rand = new System.Random();
         int i = 0;
-        while (points.Length < SAMPLING_POINTS_NUM)
+        while (points.Count < SAMPLING_POINTS_NUM)
         {
-            // while (points.Count < 64) {
-            var x = (float)rand.NextDouble() * 2 - 1;
-            var y = (float)rand.NextDouble() * 2 - 1;
-            var z = (float)rand.NextDouble() * 2 - 1;
-            var p = new Vector4(x, y, z, 1);
-            if (p.magnitude <= 1)
+            var x = UnityEngine.Random.Range(0f, 1f) * 2f - 1f;
+            var y = UnityEngine.Random.Range(0f, 1f) * 2f - 1f;
+            var z = UnityEngine.Random.Range(0f, 1f) * 2f - 1f;
+            // var x = (float)rand.NextDouble() * 2 - 1;
+            // var y = (float)rand.NextDouble() * 2 - 1;
+            // var z = (float)rand.NextDouble() * 2 - 1;
+            if ((new Vector3(x, y, z)).magnitude <= 1)
             {
-                points[i] = p;
+                var p = new Vector4(x, y, z, 1);
+                points.Add(p);
             }
         }
 
-        return points;
+        return points.ToArray();
     }
 
     public override void Init()
