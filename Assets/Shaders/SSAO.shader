@@ -121,6 +121,7 @@ Shader "Hidden/Custom/SSAO"
         clipPos.y = -clipPos.y;
         #endif
         float4 worldPos = mul(_InverseViewProjectionMatrix, clipPos);
+        // float4 worldPos = mul(unity_MatrixVP, clipPos);
         return worldPos.xyz / worldPos.w;
     }
 
@@ -243,10 +244,10 @@ Shader "Hidden/Custom/SSAO"
         float3 vp = ReconstructViewPos(i.texcoord, d, p11_22, p13_31);
 
         color.rgb = worldPosition;
-        color.r = worldPosition.r;
-        color.r = step(.5, color.r);
-        color.g = 0;
-        color.b = 0;
+        // color.r = worldPosition.r;
+        // color.r = step(.5, color.r);
+        // color.g = 0;
+        // color.b = 0;
 
         // mask
         color.rgb = lerp(

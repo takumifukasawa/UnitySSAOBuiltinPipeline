@@ -24,15 +24,13 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
 
     public override void Render(PostProcessRenderContext context)
     {
-        // var viewMatrix = Camera.main.cameraToWorldMatrix;
         var viewMatrix = Camera.main.worldToCameraMatrix;
         var inverseViewMatrix = Camera.main.cameraToWorldMatrix;
-        var projectionMatrix = Camera.main.projectionMatrix;
-        // var viewProjectionMatrix = projectionMatrix * viewMatrix;
+        // var projectionMatrix = Camera.main.projectionMatrix;
+        var projectionMatrix = GL.GetGPUProjectionMatrix(Camera.main.projectionMatrix, false);
         var viewProjectionMatrix = projectionMatrix * viewMatrix;
         var inverseViewProjectionMatrix = viewProjectionMatrix.inverse;
         var inverseProjectionMatrix = projectionMatrix.inverse;
-        // var inverseViewProjectionMatrix = (Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix).inverse;
 
         var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAO"));
         sheet.properties.SetFloat("_Blend", settings.Blend);
@@ -49,7 +47,7 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
         sheet.properties.SetMatrix("_InverseProjectionMatrix", inverseProjectionMatrix);
         sheet.properties.SetMatrix("_InverseViewProjectionMatrix", inverseViewProjectionMatrix);
         sheet.properties.SetMatrix("_InverseViewMatrix", inverseViewMatrix);
-        
+
         context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
     }
 
