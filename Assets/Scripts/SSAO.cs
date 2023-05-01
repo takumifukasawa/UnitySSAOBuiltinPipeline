@@ -27,7 +27,7 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
         var viewMatrix = Camera.main.worldToCameraMatrix;
         var inverseViewMatrix = Camera.main.cameraToWorldMatrix;
         // var projectionMatrix = Camera.main.projectionMatrix;
-        var projectionMatrix = GL.GetGPUProjectionMatrix(Camera.main.projectionMatrix, false);
+        var projectionMatrix = GL.GetGPUProjectionMatrix(Camera.main.projectionMatrix, true);
         var viewProjectionMatrix = projectionMatrix * viewMatrix;
         var inverseViewProjectionMatrix = viewProjectionMatrix.inverse;
         var inverseProjectionMatrix = projectionMatrix.inverse;
