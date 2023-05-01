@@ -56,7 +56,7 @@ Shader "Hidden/Custom/SSAO"
         #if defined(UNITY_REVERSED_Z)
         ob += (d <= 0.00001);
         #else
-    ob += (d >= 0.99999);
+        ob += (d >= 0.99999);
         #endif
         return ob * 1e8;
     }
@@ -70,13 +70,21 @@ Shader "Hidden/Custom/SSAO"
     // }
 
     // Depth/normal sampling functions
+    // ビュー空間のカメラからの距離
     float SampleDepth(float2 uv)
     {
-        float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture, sampler_CameraDepthTexture,
-                                                         UnityStereoTransformScreenSpaceTex(uv), 0));
-        return d * _ProjectionParams.z + CheckBounds(uv, d);
+        float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE_LOD(
+            _CameraDepthTexture,
+            sampler_CameraDepthTexture,
+            UnityStereoTransformScreenSpaceTex(uv),
+            0
+        ));
+        // _ProjectionParams.z ... camera far clip
+        // カメラからの距離なので linear01 depth に far clip をかけてる
+        return _ProjectionParams.y + d * _ProjectionParams.z + CheckBounds(uv, d);
     }
 
+    // ビュー空間の法線
     float3 SampleNormal(float2 uv)
     {
         #if defined(SOURCE_GBUFFER)
@@ -200,7 +208,9 @@ Shader "Hidden/Custom/SSAO"
             UnityStereoTransformScreenSpaceTex(i.texcoord),
             0
         );
+
         float depth = Linear01Depth(rawDepth);
+        // float3 worldPosition = ReconstructWorldPositionFromDepth(i.texcoord, depth);
         float3 worldPosition = ReconstructWorldPositionFromDepth(i.texcoord, rawDepth);
         float3 viewPosition = ReconstructViewPositionFromDepth(i.texcoord, rawDepth);
         // float3 worldPosition = ComputeWorldSpacePosition(i.texcoord, rawDepth, _InverseViewProjectionMatrix);
@@ -219,7 +229,6 @@ Shader "Hidden/Custom/SSAO"
 
         float d = SampleDepth(i.texcoord);
         float ld = Linear01Depth(d);
-        d = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, sampler_CameraDepthTexture, i.texcoord);
 
         float viewLinearDepth = DecodeFloatRG(cameraDepthNormalColor.zw);
         float3 wp = ReconstructWorldPositionFromViewLinearDepth(i.texcoord, viewLinearDepth);
@@ -227,20 +236,14 @@ Shader "Hidden/Custom/SSAO"
         float3x3 proj = (float3x3)unity_CameraProjection;
         float2 p11_22 = float2(unity_CameraProjection._11, unity_CameraProjection._22);
         float2 p13_31 = float2(unity_CameraProjection._13, unity_CameraProjection._23);
-        
+
         float3 norm_o;
         float depth_o = SampleDepthNormal(i.texcoord, norm_o);
-        float3 vp = ReconstructViewPos(i.texcoord, depth_o, p11_22, p13_31);
+        // float3 vp = ReconstructViewPos(i.texcoord, depth_o, p11_22, p13_31);
+        float3 vp = ReconstructViewPos(i.texcoord, d, p11_22, p13_31);
 
         color.rgb = worldPosition;
-        color.rgb = viewPosition;
-        color.rgb = float3(rawDepth, rawDepth, rawDepth);
-        color.rgb = float3(d, d, d);
-        // color.rgb = float3(viewDepth, viewDepth, viewDepth);
-        color.rgb = wp;
-
-        
-        color.rgb = vp;
+        color.r = worldPosition.r;
         color.r = step(.5, color.r);
         color.g = 0;
         color.b = 0;
@@ -248,8 +251,9 @@ Shader "Hidden/Custom/SSAO"
         // mask
         color.rgb = lerp(
             color.rgb,
-            float3(1, 1, 1),
-            step(0.99, depth)
+            float3(0, 0, 0),
+            // depth < 1. ? 1. : 0
+            depth < 1. ? 0. : 1
         );
 
         color.a = 1;

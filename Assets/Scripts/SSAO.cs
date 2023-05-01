@@ -49,7 +49,7 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
         sheet.properties.SetMatrix("_InverseProjectionMatrix", inverseProjectionMatrix);
         sheet.properties.SetMatrix("_InverseViewProjectionMatrix", inverseViewProjectionMatrix);
         sheet.properties.SetMatrix("_InverseViewMatrix", inverseViewMatrix);
-
+        
         context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
     }
 
