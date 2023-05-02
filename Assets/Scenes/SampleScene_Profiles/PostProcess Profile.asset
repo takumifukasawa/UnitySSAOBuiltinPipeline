@@ -24,13 +24,13 @@ MonoBehaviour:
     value: 1
   OcclusionSampleLength:
     overrideState: 1
-    value: 0.31
+    value: 0.11
   OcclusionMinDistance:
     overrideState: 1
     value: 0
   OcclusionMaxDistance:
     overrideState: 1
-    value: 1
+    value: 0.45
   OcclusionStrength:
     overrideState: 1
     value: 1

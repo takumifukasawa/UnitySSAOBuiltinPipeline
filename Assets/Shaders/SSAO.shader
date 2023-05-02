@@ -138,7 +138,7 @@ Shader "Hidden/Custom/SSAO"
         return rawDepth;
     }
 
-    float SampleLinearDepth(float2 uv)
+    float SampleLinear01Depth(float2 uv)
     {
         float rawDepth = SampleRawDepth(uv);
         float depth = Linear01Depth(rawDepth);
@@ -174,7 +174,7 @@ Shader "Hidden/Custom/SSAO"
         //     0
         // );
 
-        float depth = SampleLinearDepth(i.texcoord);
+        float depth = SampleLinear01Depth(i.texcoord);
 
         float3 worldPosition = ReconstructWorldPositionFromDepth(i.texcoord, rawDepth);
         float3 viewPosition = ReconstructViewPositionFromDepth(i.texcoord, rawDepth);
@@ -188,9 +188,11 @@ Shader "Hidden/Custom/SSAO"
         //     _Blend.xxx
         // );
 
+        int sampleCount = 64;
+
         int occludedCount = 0;
 
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < sampleCount; i++)
         {
             float4 offset = _SamplingPoints[i];
             float4 samplingWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
@@ -199,49 +201,42 @@ Shader "Hidden/Custom/SSAO"
             #if UNITY_UV_STARTS_AT_TOP
             samplingClipPosition.y = -samplingClipPosition.y;
             #endif
+            // TODO: zを考慮してあるべき
             float2 samplingCoord = (samplingClipPosition.xy / samplingClipPosition.w) * 0.5 + 0.5;
-            float samplingRawDepth = SampleRawDepth(samplingCoord);
+            float samplingDepth = SampleLinear01Depth(samplingCoord);
             float dist = abs(samplingViewPosition.z - viewPosition.z);
             if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
             {
                 continue;
             }
-            if (samplingRawDepth< rawDepth)
+
+            // 対象の点のdepth値が現在のdepth値よりも小さかったら（= 対象の点が現在の点よりもカメラに近かったら）
+            if (samplingDepth < depth)
             {
                 occludedCount++;
             }
         }
 
-        float aoRate = (float)occludedCount / 64.0;
+        float aoRate = (float)occludedCount / (float)sampleCount;
 
         color.rgb = worldPosition;
 
         // color.rgb = viewPosition;
         // mask
-        color.rgb = lerp(
-            color.rgb,
-            float3(0, 0, 0),
-            depth < 1. ? 0. : 1
-        );
+        // color.rgb = lerp(
+        //     color.rgb,
+        //     float3(0, 0, 0),
+        //     depth < 1. ? 0. : 1
+        // );
 
-        color.rgb = float3(rawDepth, rawDepth, rawDepth);
+        // color.rgb = float3(rawDepth, rawDepth, rawDepth);
 
-        // TODO: ここ本当は逆のはず
         color.rgb = lerp(
-            float3(0., 0., 0.),
             float3(1., 1., 1.),
+            float3(0., 0., 0.),
             aoRate * _OcclusionStrength
         );
-
-        // float4 samplingWorldPosition = float4(worldPosition, 1.) + _SamplingPoints[0] * _OcclusionSampleLength;
-        // float4 samplingViewPosition = mul(_ViewMatrix, samplingWorldPosition);
-        // float4 samplingClipPosition = mul(_ViewProjectionMatrix, samplingWorldPosition);
-        // #if UNITY_UV_STARTS_AT_TOP
-        // samplingClipPosition.y = -samplingClipPosition.y;
-        // #endif
-        // float2 samplingCoord = (samplingClipPosition.xy / samplingClipPosition.w) * 0.5 + 0.5;
-        // color.rgb = float3(samplingCoord.xy, 1);
-        // // color.rgb = float3(uv, 1);
+        // color.rgb = float3(depth, depth, depth);
 
         color.a = 1;
         return color;
