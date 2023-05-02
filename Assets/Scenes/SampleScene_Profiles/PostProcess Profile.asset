@@ -22,6 +22,18 @@ MonoBehaviour:
   DepthOrNormal:
     overrideState: 1
     value: 1
+  OcclusionSampleLength:
+    overrideState: 1
+    value: 0.31
+  OcclusionMinDistance:
+    overrideState: 1
+    value: 0
+  OcclusionMaxDistance:
+    overrideState: 1
+    value: 1
+  OcclusionStrength:
+    overrideState: 1
+    value: 1
 --- !u!114 &-666285682186096347
 MonoBehaviour:
   m_ObjectHideFlags: 3

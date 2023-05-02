@@ -9,12 +9,17 @@ Shader "Hidden/Custom/SSAO"
     // Lerp the pixel color with the luminance using the _Blend uniform.
     float _Blend;
     float _DepthOrNormal;
+    float4x4 _ViewMatrix;
     float4x4 _ViewProjectionMatrix;
     float4 _ProjectionMatrix;
     float4x4 _InverseViewMatrix;
     float4x4 _InverseViewProjectionMatrix;
     float4x4 _InverseProjectionMatrix;
     float4 _SamplingPoints[64];
+    float _OcclusionSampleLength;
+    float _OcclusionMinDistance;
+    float _OcclusionMaxDistance;
+    float _OcclusionStrength;
 
     // --------------------------------------------------------------------------
     // start: partial include from UnityCG.cginc
@@ -39,7 +44,7 @@ Shader "Hidden/Custom/SSAO"
     // ------------------------------------------------------------------------------------------------
     // ref: https://github.com/Unity-Technologies/PostProcessing/blob/v2/PostProcessing/Shaders/Builtins/ScalableAO.hlsl
     // ------------------------------------------------------------------------------------------------
-    
+
     // Boundary check for depth sampler
     // (returns a very large value if it lies out of bounds)
     float CheckBounds(float2 uv, float d)
@@ -99,7 +104,7 @@ Shader "Hidden/Custom/SSAO"
 
     // ------------------------------------------------------------------------------------------------
     // ------------------------------------------------------------------------------------------------
-    
+
     float3 ReconstructWorldPositionFromDepth(float2 screenUV, float depth)
     {
         // TODO: depthはgraphicsAPIを考慮している必要があるはず
@@ -141,13 +146,15 @@ Shader "Hidden/Custom/SSAO"
     }
 
     // ------------------------------------------------------------------------------------------------
-    
+
     float4 Frag(VaryingsDefault i) : SV_Target
     {
         float4 color = float4(1, 1, 1, 1);
 
+        float2 uv = i.texcoord.xy;
+
         float4 baseColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.texcoord);
-        
+
         // float4 cameraDepthNormalColor = SAMPLE_TEXTURE2D(
         //     _CameraDepthNormalsTexture,
         //     sampler_CameraDepthNormalsTexture,
@@ -183,14 +190,23 @@ Shader "Hidden/Custom/SSAO"
 
         int occludedCount = 0;
 
-        for(int i = 0; i < 64; i++)
+        for (int i = 0; i < 64; i++)
         {
             float4 offset = _SamplingPoints[i];
-            float4 samplingWorldPosition = float4(worldPosition, 1.) + offset;
+            float4 samplingWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
+            float4 samplingViewPosition = mul(_ViewMatrix, samplingWorldPosition);
             float4 samplingClipPosition = mul(_ViewProjectionMatrix, samplingWorldPosition);
+            #if UNITY_UV_STARTS_AT_TOP
+            samplingClipPosition.y = -samplingClipPosition.y;
+            #endif
             float2 samplingCoord = (samplingClipPosition.xy / samplingClipPosition.w) * 0.5 + 0.5;
             float samplingRawDepth = SampleRawDepth(samplingCoord);
-            if(rawDepth > samplingRawDepth)
+            float dist = abs(samplingViewPosition.z - viewPosition.z);
+            if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
+            {
+                continue;
+            }
+            if (samplingRawDepth< rawDepth)
             {
                 occludedCount++;
             }
@@ -199,7 +215,7 @@ Shader "Hidden/Custom/SSAO"
         float aoRate = (float)occludedCount / 64.0;
 
         color.rgb = worldPosition;
-        
+
         // color.rgb = viewPosition;
         // mask
         color.rgb = lerp(
@@ -210,7 +226,22 @@ Shader "Hidden/Custom/SSAO"
 
         color.rgb = float3(rawDepth, rawDepth, rawDepth);
 
-        color.rgb = float3(aoRate, aoRate, aoRate);
+        // TODO: ここ本当は逆のはず
+        color.rgb = lerp(
+            float3(0., 0., 0.),
+            float3(1., 1., 1.),
+            aoRate * _OcclusionStrength
+        );
+
+        // float4 samplingWorldPosition = float4(worldPosition, 1.) + _SamplingPoints[0] * _OcclusionSampleLength;
+        // float4 samplingViewPosition = mul(_ViewMatrix, samplingWorldPosition);
+        // float4 samplingClipPosition = mul(_ViewProjectionMatrix, samplingWorldPosition);
+        // #if UNITY_UV_STARTS_AT_TOP
+        // samplingClipPosition.y = -samplingClipPosition.y;
+        // #endif
+        // float2 samplingCoord = (samplingClipPosition.xy / samplingClipPosition.w) * 0.5 + 0.5;
+        // color.rgb = float3(samplingCoord.xy, 1);
+        // // color.rgb = float3(uv, 1);
 
         color.a = 1;
         return color;
