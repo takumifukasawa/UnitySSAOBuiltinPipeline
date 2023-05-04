@@ -37,6 +37,10 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
 
     private bool _isCreatedSamplingPoints = false;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="context"></param>
     public override void Render(PostProcessRenderContext context)
     {
         var viewMatrix = Camera.main.worldToCameraMatrix;
@@ -95,29 +99,4 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
 
         return points.ToArray();
     }
-
-    public override void Init()
-    {
-        base.Init();
-        // _samplingPoints = GetRandomPointsInUnitSphere().ToArray();
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    // List<Vector3> GetRandomPointsInUnitSphere() {
-    //     var points = new List<Vector3>();
-    //     var rand = new System.Random();
-    //     while (points.Count < 64) {
-    //         var x = (float)rand.NextDouble() * 2 - 1;
-    //         var y = (float)rand.NextDouble() * 2 - 1;
-    //         var z = (float)rand.NextDouble() * 2 - 1;
-    //         var p = new Vector3(x, y, z);
-    //         if (p.magnitude <= 1) {
-    //             points.Add(p);
-    //         }
-    //     }
-    //     return points;
-    // }
 }

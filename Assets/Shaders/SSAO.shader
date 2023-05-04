@@ -153,6 +153,7 @@ Shader "Hidden/Custom/SSAO"
         }
 
         int occludedCount = 0;
+        int divCount = SAMPLE_COUNT;
 
         for (int i = 0; i < SAMPLE_COUNT; i++)
         {
@@ -182,6 +183,7 @@ Shader "Hidden/Custom/SSAO"
             float dist = distance(samplingViewPosition.xyz, viewPosition.xyz);
             if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
             {
+                // divCount = max(1, divCount - 1);
                 continue;
             }
 
@@ -192,7 +194,7 @@ Shader "Hidden/Custom/SSAO"
             }
         }
 
-        float aoRate = (float)occludedCount / (float)SAMPLE_COUNT;
+        float aoRate = (float)occludedCount / (float)divCount;
 
         // NOTE: 本当は環境光のみにAO項を考慮するのがよいが、forward x post process の場合は全体にかけちゃう
         color.rgb = lerp(
