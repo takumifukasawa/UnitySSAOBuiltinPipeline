@@ -1,12 +1,12 @@
 Shader "Hidden/Custom/SSAO"
 {
     HLSLINCLUDE
-    // StdLib.hlsl holds pre-configured vertex shaders (VertDefault), varying structs (VaryingsDefault), and most of the data you need to write common effects.
     #include "Packages/com.unity.postprocessing/PostProcessing/Shaders/StdLib.hlsl"
+
     TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
     TEXTURE2D_SAMPLER2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture);
     TEXTURE2D_SAMPLER2D(_CameraDepthTexture, sampler_CameraDepthTexture);
-    // Lerp the pixel color with the luminance using the _Blend uniform.
+
     float _Blend;
     float _DepthOrNormal;
     float4x4 _ViewMatrix;
@@ -20,26 +20,6 @@ Shader "Hidden/Custom/SSAO"
     float _OcclusionMinDistance;
     float _OcclusionMaxDistance;
     float _OcclusionStrength;
-
-    // --------------------------------------------------------------------------
-    // start: partial include from UnityCG.cginc
-    // --------------------------------------------------------------------------
-
-    // inline float DecodeFloatRG(float2 enc)
-    // {
-    //     float2 kDecodeDot = float2(1.0, 1 / 255.0);
-    //     return dot(enc, kDecodeDot);
-    // }
-
-    // inline void DecodeDepthNormal( float4 enc, out float depth, out float3 normal )
-    // {
-    //     depth = DecodeFloatRG (enc.zw);
-    //     normal = DecodeViewNormalStereo (enc);
-    // }
-
-    // --------------------------------------------------------------------------
-    // end: partial include from UnityCG.cginc
-    // --------------------------------------------------------------------------
 
     // ------------------------------------------------------------------------------------------------
     // ref: https://github.com/Unity-Technologies/PostProcessing/blob/v2/PostProcessing/Shaders/Builtins/ScalableAO.hlsl
@@ -103,7 +83,6 @@ Shader "Hidden/Custom/SSAO"
     }
 
     // ------------------------------------------------------------------------------------------------
-    // ------------------------------------------------------------------------------------------------
 
     float3 ReconstructWorldPositionFromDepth(float2 screenUV, float depth)
     {
@@ -149,50 +128,33 @@ Shader "Hidden/Custom/SSAO"
 
     float4 Frag(VaryingsDefault i) : SV_Target
     {
-        float4 color = float4(1, 1, 1, 1);
+        const int SAMPLE_COUNT = 64;
 
-        float2 uv = i.texcoord.xy;
+        float4 color = float4(1, 1, 1, 1);
 
         float4 baseColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.texcoord);
 
-        // float4 cameraDepthNormalColor = SAMPLE_TEXTURE2D(
-        //     _CameraDepthNormalsTexture,
-        //     sampler_CameraDepthNormalsTexture,
-        //     i.texcoord
-        // );
-
-        // 1: depth normal から復号する場合。ただしDecodeFloatRGの値がちょっと謎
-        // float rawDepth = DecodeFloatRG(cameraDepthNormalColor.zw);
-        // float depth = Linear01Depth(1. - rawDepth);
-
-        // 2: depth から参照する場合
         float rawDepth = SampleRawDepth(i.texcoord);
-        // float rawDepth = SAMPLE_DEPTH_TEXTURE_LOD(
-        //     _CameraDepthTexture,
-        //     sampler_CameraDepthTexture,
-        //     UnityStereoTransformScreenSpaceTex(i.texcoord),
-        //     0
-        // );
-
-        float depth = SampleLinear01Depth(i.texcoord);
+        float depth = Linear01Depth(rawDepth);
 
         float3 worldPosition = ReconstructWorldPositionFromDepth(i.texcoord, rawDepth);
         float3 viewPosition = ReconstructViewPositionFromDepth(i.texcoord, rawDepth);
 
-        float3 viewNormal = SampleViewNormal(i.texcoord);
-        float3 worldNormal = mul((float3x3)_InverseViewMatrix, viewNormal);
+        // test calc normal
+        // float3 viewNormal = SampleViewNormal(i.texcoord);
+        // float3 worldNormal = mul((float3x3)_InverseViewMatrix, viewNormal);
 
-        // color.rgb = lerp(
-        //     baseColor.rgb,
-        //     lerp(float3(depth, depth, depth), worldNormal, _DepthOrNormal),
-        //     _Blend.xxx
-        // );
+        float eps = .0001;
 
-        int sampleCount = 64;
+        // mask exists depth
+        if(depth > 1. - eps)
+        {
+            return baseColor;
+        }
 
         int occludedCount = 0;
 
-        for (int i = 0; i < sampleCount; i++)
+        for (int i = 0; i < SAMPLE_COUNT; i++)
         {
             float4 offset = _SamplingPoints[i];
             offset.w = 0;
@@ -210,13 +172,16 @@ Shader "Hidden/Custom/SSAO"
             offsetClipPosition.y = -offsetClipPosition.y;
             #endif
 
-            // TODO: zを考慮してあるべき
+            // TODO: reverse zを考慮してあるべき？
             float2 samplingCoord = (offsetClipPosition.xy / offsetClipPosition.w) * 0.5 + 0.5;
             float samplingRawDepth = SampleRawDepth(samplingCoord);
             float3 samplingViewPosition = ReconstructViewPositionFromDepth(samplingCoord, samplingRawDepth);
-            float dist = abs(samplingViewPosition.z - offsetViewPosition.z);
+            
+            // float dist = abs(samplingViewPosition.z - viewPosition.z);
+            float dist = distance(samplingViewPosition, viewPosition);
             if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
             {
+                // occludedCount++;
                 continue;
             }
 
@@ -227,10 +192,11 @@ Shader "Hidden/Custom/SSAO"
             }
         }
 
-        float aoRate = (float)occludedCount / (float)sampleCount;
+        float aoRate = (float)occludedCount / (float)SAMPLE_COUNT;
 
         color.rgb = lerp(
-            float3(1., 1., 1.),
+            // float3(1., 1., 1.),
+            baseColor,
             float3(0., 0., 0.),
             aoRate * _OcclusionStrength
         );
