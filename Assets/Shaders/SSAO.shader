@@ -192,38 +192,36 @@ Shader "Hidden/Custom/SSAO"
 
         int occludedCount = 0;
 
-        float4 accSvp = float4(0., 0., 0., 1.);
-
         for (int i = 0; i < sampleCount; i++)
         {
             float4 offset = _SamplingPoints[i];
             offset.w = 0;
 
-            // 1: 動く
-            // float4 samplingWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
-            // float4 samplingViewPosition = mul(_ViewMatrix, samplingWorldPosition);
-            // float4 samplingClipPosition = mul(_ViewProjectionMatrix, samplingWorldPosition);
+            // 1: world -> view -> clip
+            // float4 offsetWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
+            // float4 offsetViewPosition = mul(_ViewMatrix, offsetWorldPosition);
+            // float4 offsetClipPosition = mul(_ViewProjectionMatrix, offsetWorldPosition);
 
-            // 2: こっちでも同じように動くはずだけど動かない
-            float4 samplingViewPosition = float4(viewPosition, 1.) + offset * _OcclusionSampleLength;
-            float4 samplingClipPosition = mul(_ProjectionMatrix, samplingViewPosition);
-
-            accSvp.xyz += samplingClipPosition.xyz;
+            // 2: view -> clip
+            float4 offsetViewPosition = float4(viewPosition, 1.) + offset * _OcclusionSampleLength;
+            float4 offsetClipPosition = mul(_ProjectionMatrix, offsetViewPosition);
 
             #if UNITY_UV_STARTS_AT_TOP
-            samplingClipPosition.y = -samplingClipPosition.y;
+            offsetClipPosition.y = -offsetClipPosition.y;
             #endif
+
             // TODO: zを考慮してあるべき
-            float2 samplingCoord = (samplingClipPosition.xy / samplingClipPosition.w) * 0.5 + 0.5;
-            float samplingDepth = SampleLinear01Depth(samplingCoord);
-            float dist = abs(samplingViewPosition.z - viewPosition.z);
+            float2 samplingCoord = (offsetClipPosition.xy / offsetClipPosition.w) * 0.5 + 0.5;
+            float samplingRawDepth = SampleRawDepth(samplingCoord);
+            float3 samplingViewPosition = ReconstructViewPositionFromDepth(samplingCoord, samplingRawDepth);
+            float dist = abs(samplingViewPosition.z - offsetViewPosition.z);
             if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
             {
                 continue;
             }
 
             // 対象の点のdepth値が現在のdepth値よりも小さかったら（= 対象の点が現在の点よりもカメラに近かったら）
-            if (samplingDepth < depth)
+            if (samplingViewPosition.z > offsetViewPosition.z)
             {
                 occludedCount++;
             }
@@ -231,31 +229,11 @@ Shader "Hidden/Custom/SSAO"
 
         float aoRate = (float)occludedCount / (float)sampleCount;
 
-        color.rgb = worldPosition;
-
-        // mask
-        // color.rgb = lerp(
-        //     color.rgb,
-        //     float3(0, 0, 0),
-        //     depth < 1. ? 0. : 1
-        // );
-
         color.rgb = lerp(
             float3(1., 1., 1.),
             float3(0., 0., 0.),
             aoRate * _OcclusionStrength
         );
-
-
-        float3 svp = float4(
-            accSvp.x / (float)sampleCount,
-            accSvp.y / (float)sampleCount,
-            accSvp.z / (float)sampleCount,
-            1.
-        );
-        // color.rgb = float3(depth, depth, depth);
-        // color.rgb = viewPosition;
-        // color.rgb = svp.xyz;
 
         color.a = 1;
         return color;
