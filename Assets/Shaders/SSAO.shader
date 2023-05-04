@@ -11,7 +11,7 @@ Shader "Hidden/Custom/SSAO"
     float _DepthOrNormal;
     float4x4 _ViewMatrix;
     float4x4 _ViewProjectionMatrix;
-    float4 _ProjectionMatrix;
+    float4x4 _ProjectionMatrix;
     float4x4 _InverseViewMatrix;
     float4x4 _InverseViewProjectionMatrix;
     float4x4 _InverseProjectionMatrix;
@@ -123,8 +123,8 @@ Shader "Hidden/Custom/SSAO"
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
         #endif
-        float4 worldPos = mul(_InverseProjectionMatrix, clipPos);
-        return worldPos.xyz / worldPos.w;
+        float4 viewPos = mul(_InverseProjectionMatrix, clipPos);
+        return viewPos.xyz / viewPos.w;
     }
 
     float SampleRawDepth(float2 uv)
@@ -192,12 +192,24 @@ Shader "Hidden/Custom/SSAO"
 
         int occludedCount = 0;
 
+        float4 accSvp = float4(0., 0., 0., 1.);
+
         for (int i = 0; i < sampleCount; i++)
         {
             float4 offset = _SamplingPoints[i];
-            float4 samplingWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
-            float4 samplingViewPosition = mul(_ViewMatrix, samplingWorldPosition);
-            float4 samplingClipPosition = mul(_ViewProjectionMatrix, samplingWorldPosition);
+            offset.w = 0;
+
+            // 1: 動く
+            // float4 samplingWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
+            // float4 samplingViewPosition = mul(_ViewMatrix, samplingWorldPosition);
+            // float4 samplingClipPosition = mul(_ViewProjectionMatrix, samplingWorldPosition);
+
+            // 2: こっちでも同じように動くはずだけど動かない
+            float4 samplingViewPosition = float4(viewPosition, 1.) + offset * _OcclusionSampleLength;
+            float4 samplingClipPosition = mul(_ProjectionMatrix, samplingViewPosition);
+
+            accSvp.xyz += samplingClipPosition.xyz;
+
             #if UNITY_UV_STARTS_AT_TOP
             samplingClipPosition.y = -samplingClipPosition.y;
             #endif
@@ -221,7 +233,6 @@ Shader "Hidden/Custom/SSAO"
 
         color.rgb = worldPosition;
 
-        // color.rgb = viewPosition;
         // mask
         // color.rgb = lerp(
         //     color.rgb,
@@ -229,14 +240,22 @@ Shader "Hidden/Custom/SSAO"
         //     depth < 1. ? 0. : 1
         // );
 
-        // color.rgb = float3(rawDepth, rawDepth, rawDepth);
-
         color.rgb = lerp(
             float3(1., 1., 1.),
             float3(0., 0., 0.),
             aoRate * _OcclusionStrength
         );
+
+
+        float3 svp = float4(
+            accSvp.x / (float)sampleCount,
+            accSvp.y / (float)sampleCount,
+            accSvp.z / (float)sampleCount,
+            1.
+        );
         // color.rgb = float3(depth, depth, depth);
+        // color.rgb = viewPosition;
+        // color.rgb = svp.xyz;
 
         color.a = 1;
         return color;

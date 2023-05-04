@@ -90,7 +90,7 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
             //     points.Add(p);
             // }
             var p = UnityEngine.Random.insideUnitSphere;
-            points.Add(p);
+            points.Add(new Vector4(p.x, p.y, p.z, 0));
         }
 
         return points.ToArray();
