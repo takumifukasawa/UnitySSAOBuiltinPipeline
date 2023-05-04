@@ -147,7 +147,7 @@ Shader "Hidden/Custom/SSAO"
         float eps = .0001;
 
         // mask exists depth
-        if(depth > 1. - eps)
+        if (depth > 1. - eps)
         {
             return baseColor;
         }
@@ -176,16 +176,16 @@ Shader "Hidden/Custom/SSAO"
             float2 samplingCoord = (offsetClipPosition.xy / offsetClipPosition.w) * 0.5 + 0.5;
             float samplingRawDepth = SampleRawDepth(samplingCoord);
             float3 samplingViewPosition = ReconstructViewPositionFromDepth(samplingCoord, samplingRawDepth);
-            
-            // float dist = abs(samplingViewPosition.z - viewPosition.z);
-            float dist = distance(samplingViewPosition, viewPosition);
+
+            // NOTE: 遠距離の場合がうまくいってないかも
+            // 現在のviewPositionとoffset済みのviewPositionが一定距離離れていたらor近すぎたら無視
+            float dist = distance(samplingViewPosition.xyz, viewPosition.xyz);
             if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
             {
-                // occludedCount++;
                 continue;
             }
 
-            // 対象の点のdepth値が現在のdepth値よりも小さかったら（= 対象の点が現在の点よりもカメラに近かったら）
+            // 対象の点のdepth値が現在のdepth値よりも小さかったら遮蔽とみなす（= 対象の点が現在の点よりもカメラに近かったら）
             if (samplingViewPosition.z > offsetViewPosition.z)
             {
                 occludedCount++;
@@ -194,8 +194,8 @@ Shader "Hidden/Custom/SSAO"
 
         float aoRate = (float)occludedCount / (float)SAMPLE_COUNT;
 
+        // NOTE: 本当は環境光のみにAO項を考慮するのがよいが、forward x post process の場合は全体にかけちゃう
         color.rgb = lerp(
-            // float3(1., 1., 1.),
             baseColor,
             float3(0., 0., 0.),
             aoRate * _OcclusionStrength
