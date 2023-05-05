@@ -7,11 +7,14 @@ using UnityEngine.Serialization;
 using Random = System.Random;
 
 [Serializable]
-[PostProcess(typeof(SSAORenderer), PostProcessEvent.AfterStack, "Custom/SSAO")]
-public sealed class SSAO : PostProcessEffectSettings
+[PostProcess(typeof(SSAOHemisphereRenderer), PostProcessEvent.AfterStack, "Custom/SSAOHemisphere")]
+public sealed class SSAOHemisphere : PostProcessEffectSettings
 {
     [FormerlySerializedAs("blend")] [Range(0f, 1f), Tooltip("SSAO effect intensity.")]
     public FloatParameter Blend = new FloatParameter { value = 0.5f };
+
+    [FormerlySerializedAs("depthOrNormal")] [Range(0f, 1f), Tooltip("lerp, 0: depth ~ 1: normal")]
+    public FloatParameter DepthOrNormal = new FloatParameter { value = 0.5f };
 
     [FormerlySerializedAs("occlusion sample length")] [Range(0.01f, 5f), Tooltip("occ sample length")]
     public FloatParameter OcclusionSampleLength = new FloatParameter { value = 1f };
@@ -22,11 +25,14 @@ public sealed class SSAO : PostProcessEffectSettings
     [FormerlySerializedAs("occlusion max distance")] [Range(0f, 5f), Tooltip("occlusion max distance")]
     public FloatParameter OcclusionMaxDistance = new FloatParameter { value = 5f };
     
+    [FormerlySerializedAs("occlusion bias")] [Range(0f, 1f), Tooltip("occlusion bias")]
+    public FloatParameter OcclusionBias = new FloatParameter { value = 0.001f };
+    
     [FormerlySerializedAs("occlusion strength")] [Range(0f, 1f), Tooltip("occlusion strength")]
     public FloatParameter OcclusionStrength = new FloatParameter { value = 1f };
 }
 
-public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
+public sealed class SSAOHemisphereRenderer : PostProcessEffectRenderer<SSAOHemisphere>
 {
     private const int SAMPLING_POINTS_NUM = 64;
 
@@ -47,12 +53,13 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
         var inverseViewProjectionMatrix = viewProjectionMatrix.inverse;
         var inverseProjectionMatrix = projectionMatrix.inverse;
 
-        var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAO"));
+        var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAOHemisphere"));
         sheet.properties.SetFloat("_Blend", settings.Blend);
+        sheet.properties.SetFloat("_DepthOrNormal", settings.DepthOrNormal);
         if (!_isCreatedSamplingPoints)
         {
             _isCreatedSamplingPoints = true;
-            _samplingPoints = GetRandomPointsInUnitSphere();
+            _samplingPoints = GetRandomPointsInUnitHemisphere();
             sheet.properties.SetVectorArray("_SamplingPoints", _samplingPoints);
         }
 
@@ -66,6 +73,7 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
         sheet.properties.SetFloat("_OcclusionSampleLength", settings.OcclusionSampleLength);
         sheet.properties.SetFloat("_OcclusionMinDistance", settings.OcclusionMinDistance);
         sheet.properties.SetFloat("_OcclusionMaxDistance", settings.OcclusionMaxDistance);
+        sheet.properties.SetFloat("_OcclusionBias", settings.OcclusionBias);
         sheet.properties.SetFloat("_OcclusionStrength", settings.OcclusionStrength);
 
         context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
@@ -75,13 +83,20 @@ public sealed class SSAORenderer : PostProcessEffectRenderer<SSAO>
     /// 
     /// </summary>
     /// <returns></returns>
-    static Vector4[] GetRandomPointsInUnitSphere()
+    static Vector4[] GetRandomPointsInUnitHemisphere()
     {
         var points = new List<Vector4>();
         while (points.Count < SAMPLING_POINTS_NUM)
         {
-            var p = UnityEngine.Random.insideUnitSphere;
-            points.Add(new Vector4(p.x, p.y, p.z, 0));
+            var r1 = UnityEngine.Random.Range(0f, 1f);
+            var r2 = UnityEngine.Random.Range(0f, 1f);
+            var x = Mathf.Cos(2 * Mathf.PI * r1) * 2 * Mathf.Sqrt(r2 * (1 - r2));
+            var y = Mathf.Sin(2 * Mathf.PI * r1) * 2 * Mathf.Sqrt(r2 * (1 - r2));
+            var z = 1 - 2 * r2;
+            z = Mathf.Abs(z);
+            // for debug
+            // Debug.Log($"x: {x}, y: {y}, z: {z}");
+            points.Add(new Vector4(x, y, z, 0));
         }
 
         return points.ToArray();

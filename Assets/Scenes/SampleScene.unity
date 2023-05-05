@@ -580,6 +580,8 @@ MonoBehaviour:
       PublicKeyToken=null
   - assemblyQualifiedName: SSAO, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
+  - assemblyQualifiedName: SSAOHemisphere, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
 --- !u!114 &963194230
 MonoBehaviour:
   m_ObjectHideFlags: 0

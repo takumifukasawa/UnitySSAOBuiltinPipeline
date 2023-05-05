@@ -12,14 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf3076f83f8b4ce8a8cea31a1d110660, type: 3}
   m_Name: SSAO
   m_EditorClassIdentifier: 
-  active: 1
+  active: 0
   enabled:
     overrideState: 1
     value: 1
   Blend:
-    overrideState: 1
-    value: 1
-  DepthOrNormal:
     overrideState: 1
     value: 1
   OcclusionSampleLength:
@@ -34,7 +31,7 @@ MonoBehaviour:
   OcclusionStrength:
     overrideState: 1
     value: 1
---- !u!114 &-666285682186096347
+--- !u!114 &-409234921118481811
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -43,46 +40,34 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c1cb7e9e120078f43bce4f0b1be547a7, type: 3}
-  m_Name: AmbientOcclusion
+  m_Script: {fileID: 11500000, guid: 01a400740b114a62a10c1141214873a4, type: 3}
+  m_Name: SSAOHemisphere
   m_EditorClassIdentifier: 
-  active: 0
+  active: 1
   enabled:
     overrideState: 1
     value: 1
-  mode:
+  Blend:
     overrideState: 1
     value: 1
-  intensity:
+  DepthOrNormal:
     overrideState: 1
-    value: 0.68
-  color:
-    overrideState: 0
-    value: {r: 0, g: 0, b: 0, a: 1}
-  ambientOnly:
-    overrideState: 0
-    value: 1
-  noiseFilterTolerance:
-    overrideState: 0
     value: 0
-  blurTolerance:
-    overrideState: 0
-    value: -4.6
-  upsampleTolerance:
-    overrideState: 0
-    value: -12
-  thicknessModifier:
+  OcclusionSampleLength:
+    overrideState: 1
+    value: 0.09
+  OcclusionMinDistance:
+    overrideState: 1
+    value: 0
+  OcclusionMaxDistance:
+    overrideState: 1
+    value: 0.31
+  OcclusionBias:
+    overrideState: 1
+    value: 0.01
+  OcclusionStrength:
     overrideState: 1
     value: 1
-  directLightingStrength:
-    overrideState: 0
-    value: 0
-  radius:
-    overrideState: 0
-    value: 0.25
-  quality:
-    overrideState: 0
-    value: 2
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,50 +81,5 @@ MonoBehaviour:
   m_Name: PostProcess Profile
   m_EditorClassIdentifier: 
   settings:
-  - {fileID: 7099450225602762591}
-  - {fileID: -666285682186096347}
   - {fileID: -4250832602419124567}
---- !u!114 &7099450225602762591
-MonoBehaviour:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 40b924e2dad56384a8df2a1e111bb675, type: 3}
-  m_Name: Vignette
-  m_EditorClassIdentifier: 
-  active: 0
-  enabled:
-    overrideState: 1
-    value: 1
-  mode:
-    overrideState: 0
-    value: 0
-  color:
-    overrideState: 0
-    value: {r: 0, g: 0, b: 0, a: 1}
-  center:
-    overrideState: 0
-    value: {x: 0.5, y: 0.5}
-  intensity:
-    overrideState: 1
-    value: 0.633
-  smoothness:
-    overrideState: 0
-    value: 0.2
-  roundness:
-    overrideState: 0
-    value: 1
-  rounded:
-    overrideState: 0
-    value: 0
-  mask:
-    overrideState: 0
-    value: {fileID: 0}
-    defaultState: 1
-  opacity:
-    overrideState: 0
-    value: 1
+  - {fileID: -409234921118481811}

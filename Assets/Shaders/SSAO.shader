@@ -8,7 +8,6 @@ Shader "Hidden/Custom/SSAO"
     TEXTURE2D_SAMPLER2D(_CameraDepthTexture, sampler_CameraDepthTexture);
 
     float _Blend;
-    float _DepthOrNormal;
     float4x4 _ViewMatrix;
     float4x4 _ViewProjectionMatrix;
     float4x4 _ProjectionMatrix;
