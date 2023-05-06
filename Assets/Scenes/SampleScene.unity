@@ -582,7 +582,7 @@ MonoBehaviour:
       PublicKeyToken=null
   - assemblyQualifiedName: SSAOHemisphere, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
-  - assemblyQualifiedName: SSAOUE4, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+  - assemblyQualifiedName: SSAOAngleBased, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
 --- !u!114 &963194230
 MonoBehaviour:
@@ -1075,14 +1075,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1659713662}
-  m_LocalRotation: {x: -0.13598989, y: -0.6024328, z: 0.4426815, w: -0.6500882}
+  m_LocalRotation: {x: 0.41438907, y: 0.1331056, z: 0.63540363, w: -0.6378299}
   m_LocalPosition: {x: 1.1, y: 0, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 45.25, y: -289.686, z: -35.789}
+  m_LocalEulerAnglesHint: {x: -44.248, y: -330.125, z: -102.162}
 --- !u!1 &2041411426
 GameObject:
   m_ObjectHideFlags: 0

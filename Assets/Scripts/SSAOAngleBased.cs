@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.Serialization;
-using Random = System.Random;
 
 [Serializable]
 [PostProcess(typeof(SSAOAngleBasedRenderer), PostProcessEvent.AfterStack, "Custom/SSAOAngleBased")]
@@ -34,10 +32,6 @@ public sealed class SSAOAngleBased : PostProcessEffectSettings
 
 public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngleBased>
 {
-    private const int SAMPLING_POINTS_NUM = 64;
-
-    private Vector4[] _samplingPoints = new Vector4[SAMPLING_POINTS_NUM];
-
     private bool _isCreatedSamplingPoints = false;
 
     /// <summary>
@@ -58,21 +52,30 @@ public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngle
         sheet.properties.SetFloat("_DepthOrNormal", settings.DepthOrNormal);
         if (!_isCreatedSamplingPoints)
         {
-            _isCreatedSamplingPoints = true;
-            _samplingPoints = GetRandomPointsInUnitHemisphere();
-            sheet.properties.SetVectorArray("_SamplingPoints", _samplingPoints);
-
             var rotList = new List<float>();
             var lenList = new List<float>();
-            for(int i = 0; i < 6; i++)
+            var sampleCount = 6;
+            for(int i = 0; i < sampleCount; i++)
             {
-                var rad = UnityEngine.Random.Range(0f, Mathf.PI * 2);
+                // 任意の角度. できるだけ均等にバラけていた方がよい
+                var pieceRad = (Mathf.PI * 2) / sampleCount;
+                var rad = UnityEngine.Random.Range(
+                    pieceRad * i,
+                    pieceRad * (i + 1)
+                );
                 rotList.Add(rad);
-                var len = UnityEngine.Random.Range(0f, 1f);
+                // 任意の長さの範囲. できるだけ均等にバラけていた方がよい
+                var baseLen = 0.1f;
+                var pieceLen = (1f - baseLen) / sampleCount;
+                var len = UnityEngine.Random.Range(
+                    baseLen + pieceLen * i,
+                    baseLen + pieceLen * (i + 1)
+                );
                 lenList.Add(len);
             }
             sheet.properties.SetFloatArray("_SamplingRotations", rotList.ToArray());
             sheet.properties.SetFloatArray("_SamplingDistances", lenList.ToArray());
+            _isCreatedSamplingPoints = true;
         }
 
         sheet.properties.SetMatrix("_ViewMatrix", viewMatrix);
@@ -89,28 +92,5 @@ public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngle
         sheet.properties.SetFloat("_OcclusionStrength", settings.OcclusionStrength);
 
         context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    static Vector4[] GetRandomPointsInUnitHemisphere()
-    {
-        var points = new List<Vector4>();
-        while (points.Count < SAMPLING_POINTS_NUM)
-        {
-            var r1 = UnityEngine.Random.Range(0f, 1f);
-            var r2 = UnityEngine.Random.Range(0f, 1f);
-            var x = Mathf.Cos(2 * Mathf.PI * r1) * 2 * Mathf.Sqrt(r2 * (1 - r2));
-            var y = Mathf.Sin(2 * Mathf.PI * r1) * 2 * Mathf.Sqrt(r2 * (1 - r2));
-            var z = 1 - 2 * r2;
-            z = Mathf.Abs(z);
-            // for debug
-            // Debug.Log($"x: {x}, y: {y}, z: {z}");
-            points.Add(new Vector4(x, y, z, 0));
-        }
-
-        return points.ToArray();
     }
 }

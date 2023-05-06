@@ -15,7 +15,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
     float4x4 _InverseViewMatrix;
     float4x4 _InverseViewProjectionMatrix;
     float4x4 _InverseProjectionMatrix;
-    float4 _SamplingPoints[64];
     float _SamplingRotations[6];
     float _SamplingDistances[6];
     float _OcclusionSampleLength;
@@ -169,8 +168,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
     float4 Frag(VaryingsDefault i) : SV_Target
     {
-        const int SAMPLE_COUNT = 64;
-
         float4 color = float4(1, 1, 1, 1);
 
         float4 baseColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.texcoord);
@@ -180,6 +177,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
         float3 worldPosition = ReconstructWorldPositionFromDepth(i.texcoord, rawDepth);
         float3 viewPosition = ReconstructViewPositionFromDepth(i.texcoord, rawDepth);
+        float3 surfaceToCameraViewDir = -normalize(viewPosition);
 
         // test calc normal
         float3 viewNormal = SampleViewNormal(i.texcoord);
@@ -200,14 +198,14 @@ Shader "Hidden/Custom/SSAOAngleBased"
         }
 
         float occludedAcc = 0.;
-        int divCount = SAMPLE_COUNT;
+        int samplingCount = 6;
 
-        for (int j = 0; j < 6; j++)
+        for (int j = 0; j < samplingCount; j++)
         {
             float2x2 rot = GetRotationMatrix(_SamplingRotations[j]);
             float2 offset = _SamplingDistances[j] * _OcclusionSampleLength;
-            float3 offsetA = float3(mul(rot, offset), 1.);
-            float3 offsetB = float3(mul(rot, -offset), 1.);
+            float3 offsetA = float3(mul(rot, offset), 0.);
+            float3 offsetB = float3(-offsetA.xy, 0.);
 
             float2 rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
             float2 rawDepthB = SampleRawDepthByViewPosition(viewPosition, offsetB);
@@ -215,13 +213,56 @@ Shader "Hidden/Custom/SSAOAngleBased"
             float3 viewPositionA = ReconstructViewPositionFromDepth(i.texcoord, rawDepthA);
             float3 viewPositionB = ReconstructViewPositionFromDepth(i.texcoord, rawDepthB);
 
-            float3 dirA = normalize(viewPositionA - viewPosition);
-            float3 dirB = normalize(viewPositionB - viewPosition);
+            float distA = distance(viewPositionA.xyz, viewPosition.xyz);
+            float distB = distance(viewPositionA.xyz, viewPosition.xyz);
 
-            float angleAB = min(dot(dirA, dirB), 1.);
+            // if (abs(viewPositionA.z - viewPosition.z) < _OcclusionBias)
+            // {
+            //     continue;
+            // }
+            // if (abs(viewPositionB.z - viewPosition.z) < _OcclusionBias)
+            // {
+            //     continue;
+            // }
+
+            if (distA < _OcclusionMinDistance || _OcclusionMaxDistance < distA)
+            {
+                continue;
+            }
+            if (distB < _OcclusionMinDistance || _OcclusionMaxDistance < distB)
+            {
+                continue;
+            }
+
+            // pattern_1
+            // float3 dirA = normalize(viewPositionA - viewPosition);
+            // float3 dirB = normalize(viewPositionB - viewPosition);
+            // float dotA = dot(dirA, surfaceToCameraViewDir);
+            // float dotB = dot(dirB, surfaceToCameraViewDir);
+            // float angleA = acos(dotA);
+            // float angleB = acos(dotB);
+            // float ao = saturate(min((angleA + angleB) / PI, 1.));
+
+            // pattern_2
+            // TODO: distanceが分母になる？
+            float tanA = (viewPositionA.z - viewPosition.z) / distance(viewPositionA.xy, viewPosition.xy);
+            float tanB = (viewPositionB.z - viewPosition.z) / distance(viewPositionB.xy, viewPosition.xy);
+            // float tanA = distance(viewPositionA.xy, viewPosition.xy) / (viewPositionA.z - viewPosition.z);
+            // float tanB = distance(viewPositionB.xy, viewPosition.xy) / (viewPositionB.z - viewPosition.z);
+            float angleA = atan(tanA);
+            float angleB = atan(tanB);
+            float ao = saturate(min((angleA + angleB) / PI, 1.));
+
+            // pattern_3
+            // float3 dirA = normalize(viewPositionA - viewPosition);
+            // float3 dirB = normalize(viewPositionB - viewPosition);
+            // float dotDirs = dot(dirA, dirB);
+            // float ao = saturate(min(1. - dotDirs, 1.));
+
+            occludedAcc += ao;
         }
 
-        float aoRate = occludedAcc / (float)divCount;
+        float aoRate = occludedAcc / (float)samplingCount;
 
         // NOTE: 本当は環境光のみにAO項を考慮するのがよいが、forward x post process の場合は全体にかけちゃう
         color.rgb = lerp(
