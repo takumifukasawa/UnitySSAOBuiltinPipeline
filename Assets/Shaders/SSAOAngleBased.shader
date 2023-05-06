@@ -1,4 +1,4 @@
-Shader "Hidden/Custom/SSAOUE4"
+Shader "Hidden/Custom/SSAOAngleBased"
 {
     HLSLINCLUDE
     #include "Packages/com.unity.postprocessing/PostProcessing/Shaders/StdLib.hlsl"
@@ -204,21 +204,21 @@ Shader "Hidden/Custom/SSAOUE4"
 
         for (int j = 0; j < SAMPLE_COUNT; j++)
         {
-            float2x2 rot = GetRotationMatrix(_SamplingRotations[j]);
-            float2 offset = _SamplingDistances[j] * _OcclusionSampleLength;
-            float3 offsetA = float3(mul(rot, offset), 1.);
-            float3 offsetB = float3(mul(rot, -offset), 1.);
+            // float2x2 rot = GetRotationMatrix(_SamplingRotations[j]);
+            // float2 offset = _SamplingDistances[j] * _OcclusionSampleLength;
+            // float3 offsetA = float3(mul(rot, offset), 1.);
+            // float3 offsetB = float3(mul(rot, -offset), 1.);
 
-            float2 rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
-            float2 rawDepthB = SampleRawDepthByViewPosition(viewPosition, offsetB);
+            // float2 rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
+            // float2 rawDepthB = SampleRawDepthByViewPosition(viewPosition, offsetB);
 
-            float3 viewPositionA = ReconstructViewPositionFromDepth(i.texcoord, rawDepthA);
-            float3 viewPositionB = ReconstructViewPositionFromDepth(i.texcoord, rawDepthB);
+            // float3 viewPositionA = ReconstructViewPositionFromDepth(i.texcoord, rawDepthA);
+            // float3 viewPositionB = ReconstructViewPositionFromDepth(i.texcoord, rawDepthB);
 
-            float dirA = normalize(viewPositionA - viewPosition);
-            float dirB = normalize(viewPositionB - viewPosition);
+            // float dirA = normalize(viewPositionA - viewPosition);
+            // float dirB = normalize(viewPositionB - viewPosition);
 
-            float angleAB = min(dot(dirA, dirB), 1.);
+            // float angleAB = min(dot(dirA, dirB), 1.);
         }
 
         float aoRate = occludedAcc / (float)divCount;

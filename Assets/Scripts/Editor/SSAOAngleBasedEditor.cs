@@ -1,7 +1,7 @@
 ﻿using UnityEditor.Rendering.PostProcessing;
 
-[PostProcessEditor(typeof(SSAOUE4))]
-public sealed class SSAOUE4Editor : PostProcessEffectEditor<SSAOUE4>
+[PostProcessEditor(typeof(SSAOAngleBased))]
+public sealed class SSAOAngleBasedEditor : PostProcessEffectEditor<SSAOAngleBased>
 {
     SerializedParameterOverride m_Blend;
     SerializedParameterOverride m_DepthOrNormal;

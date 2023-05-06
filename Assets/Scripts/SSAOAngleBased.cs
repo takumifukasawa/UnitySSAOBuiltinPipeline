@@ -7,8 +7,8 @@ using UnityEngine.Serialization;
 using Random = System.Random;
 
 [Serializable]
-[PostProcess(typeof(SSAOUE4Renderer), PostProcessEvent.AfterStack, "Custom/SSAOUE4")]
-public sealed class SSAOUE4 : PostProcessEffectSettings
+[PostProcess(typeof(SSAOAngleBasedRenderer), PostProcessEvent.AfterStack, "Custom/SSAOAngleBased")]
+public sealed class SSAOAngleBased : PostProcessEffectSettings
 {
     [FormerlySerializedAs("blend")] [Range(0f, 1f), Tooltip("SSAO effect intensity.")]
     public FloatParameter Blend = new FloatParameter { value = 0.5f };
@@ -32,7 +32,7 @@ public sealed class SSAOUE4 : PostProcessEffectSettings
     public FloatParameter OcclusionStrength = new FloatParameter { value = 1f };
 }
 
-public sealed class SSAOUE4Renderer : PostProcessEffectRenderer<SSAOUE4>
+public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngleBased>
 {
     private const int SAMPLING_POINTS_NUM = 64;
 
@@ -53,7 +53,7 @@ public sealed class SSAOUE4Renderer : PostProcessEffectRenderer<SSAOUE4>
         var inverseViewProjectionMatrix = viewProjectionMatrix.inverse;
         var inverseProjectionMatrix = projectionMatrix.inverse;
 
-        var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAOUE4"));
+        var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAOAngleBased"));
         sheet.properties.SetFloat("_Blend", settings.Blend);
         sheet.properties.SetFloat("_DepthOrNormal", settings.DepthOrNormal);
         if (!_isCreatedSamplingPoints)
