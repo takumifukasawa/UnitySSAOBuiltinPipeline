@@ -7,11 +7,14 @@ using UnityEngine.Serialization;
 using Random = System.Random;
 
 [Serializable]
-[PostProcess(typeof(SSAOHemisphereRenderer), PostProcessEvent.AfterStack, "Custom/SSAOHemisphere")]
-public sealed class SSAOHemisphere : PostProcessEffectSettings
+[PostProcess(typeof(SSAOUE4Renderer), PostProcessEvent.AfterStack, "Custom/SSAOUE4")]
+public sealed class SSAOUE4 : PostProcessEffectSettings
 {
     [FormerlySerializedAs("blend")] [Range(0f, 1f), Tooltip("SSAO effect intensity.")]
     public FloatParameter Blend = new FloatParameter { value = 0.5f };
+
+    [FormerlySerializedAs("depthOrNormal")] [Range(0f, 1f), Tooltip("lerp, 0: depth ~ 1: normal")]
+    public FloatParameter DepthOrNormal = new FloatParameter { value = 0.5f };
 
     [FormerlySerializedAs("occlusion sample length")] [Range(0.01f, 5f), Tooltip("occ sample length")]
     public FloatParameter OcclusionSampleLength = new FloatParameter { value = 1f };
@@ -29,7 +32,7 @@ public sealed class SSAOHemisphere : PostProcessEffectSettings
     public FloatParameter OcclusionStrength = new FloatParameter { value = 1f };
 }
 
-public sealed class SSAOHemisphereRenderer : PostProcessEffectRenderer<SSAOHemisphere>
+public sealed class SSAOUE4Renderer : PostProcessEffectRenderer<SSAOUE4>
 {
     private const int SAMPLING_POINTS_NUM = 64;
 
@@ -50,13 +53,26 @@ public sealed class SSAOHemisphereRenderer : PostProcessEffectRenderer<SSAOHemis
         var inverseViewProjectionMatrix = viewProjectionMatrix.inverse;
         var inverseProjectionMatrix = projectionMatrix.inverse;
 
-        var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAOHemisphere"));
+        var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAOUE4"));
         sheet.properties.SetFloat("_Blend", settings.Blend);
+        sheet.properties.SetFloat("_DepthOrNormal", settings.DepthOrNormal);
         if (!_isCreatedSamplingPoints)
         {
             _isCreatedSamplingPoints = true;
             _samplingPoints = GetRandomPointsInUnitHemisphere();
             sheet.properties.SetVectorArray("_SamplingPoints", _samplingPoints);
+
+            var rotList = new List<float>();
+            var lenList = new List<float>();
+            for(int i = 0; i < 6; i++)
+            {
+                var rad = UnityEngine.Random.Range(0f, Mathf.PI * 2);
+                rotList.Add(rad);
+                var len = UnityEngine.Random.Range(0f, 1f);
+                lenList.Add(len);
+            }
+            sheet.properties.SetFloatArray("_SamplingRotations", rotList.ToArray());
+            sheet.properties.SetFloatArray("_SamplingDistances", lenList.ToArray());
         }
 
         sheet.properties.SetMatrix("_ViewMatrix", viewMatrix);

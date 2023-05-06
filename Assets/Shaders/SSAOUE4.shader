@@ -1,4 +1,4 @@
-Shader "Hidden/Custom/SSAOHemisphere"
+Shader "Hidden/Custom/SSAOUE4"
 {
     HLSLINCLUDE
     #include "Packages/com.unity.postprocessing/PostProcessing/Shaders/StdLib.hlsl"
@@ -8,6 +8,7 @@ Shader "Hidden/Custom/SSAOHemisphere"
     TEXTURE2D_SAMPLER2D(_CameraDepthTexture, sampler_CameraDepthTexture);
 
     float _Blend;
+    float _DepthOrNormal;
     float4x4 _ViewMatrix;
     float4x4 _ViewProjectionMatrix;
     float4x4 _ProjectionMatrix;
@@ -15,6 +16,8 @@ Shader "Hidden/Custom/SSAOHemisphere"
     float4x4 _InverseViewProjectionMatrix;
     float4x4 _InverseProjectionMatrix;
     float4 _SamplingPoints[64];
+    float _SamplingRotations[6];
+    float _SamplingDistances[6];
     float _OcclusionSampleLength;
     float _OcclusionMinDistance;
     float _OcclusionMaxDistance;
@@ -84,10 +87,10 @@ Shader "Hidden/Custom/SSAOHemisphere"
 
     // ------------------------------------------------------------------------------------------------
 
-    float3 ReconstructWorldPositionFromDepth(float2 screenUV, float depth)
+    float3 ReconstructWorldPositionFromDepth(float2 screenUV, float rawDepth)
     {
         // TODO: depthはgraphicsAPIを考慮している必要があるはず
-        float4 clipPos = float4(screenUV * 2.0 - 1.0, depth, 1.0);
+        float4 clipPos = float4(screenUV * 2.0 - 1.0, rawDepth, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
         #endif
@@ -95,10 +98,10 @@ Shader "Hidden/Custom/SSAOHemisphere"
         return worldPos.xyz / worldPos.w;
     }
 
-    float3 ReconstructViewPositionFromDepth(float2 screenUV, float depth)
+    float3 ReconstructViewPositionFromDepth(float2 screenUV, float rawDepth)
     {
         // TODO: depthはgraphicsAPIを考慮している必要があるはず
-        float4 clipPos = float4(screenUV * 2.0 - 1.0, depth, 1.0);
+        float4 clipPos = float4(screenUV * 2.0 - 1.0, rawDepth, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
         #endif
@@ -133,6 +136,35 @@ Shader "Hidden/Custom/SSAOHemisphere"
         return tbn;
     }
 
+    float2x2 GetRotationMatrix(float rad)
+    {
+        float c = cos(rad);
+        float s = sin(rad);
+        return float2x2(c, -s, s, c);
+    }
+
+    float4 SampleRawDepthByViewPosition(float3 viewPosition, float3 offset)
+    {
+        // 1: world -> view -> clip
+        // float4 offsetWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
+        // float4 offsetViewPosition = mul(_ViewMatrix, offsetWorldPosition);
+        // float4 offsetClipPosition = mul(_ViewProjectionMatrix, offsetWorldPosition);
+
+        // 2: view -> clip
+        float4 offsetViewPosition = float4(viewPosition, 1.) + float4(offset, 0.);
+        float4 offsetClipPosition = mul(_ProjectionMatrix, offsetViewPosition);
+
+        #if UNITY_UV_STARTS_AT_TOP
+        offsetClipPosition.y = -offsetClipPosition.y;
+        #endif
+
+        // TODO: reverse zを考慮してあるべき？
+        float2 samplingCoord = (offsetClipPosition.xy / offsetClipPosition.w) * 0.5 + 0.5;
+        float samplingRawDepth = SampleRawDepth(samplingCoord);
+
+        return samplingRawDepth;
+    }
+
     // ------------------------------------------------------------------------------------------------
 
     float4 Frag(VaryingsDefault i) : SV_Target
@@ -153,6 +185,12 @@ Shader "Hidden/Custom/SSAOHemisphere"
         float3 viewNormal = SampleViewNormal(i.texcoord);
         float3 worldNormal = mul((float3x3)_InverseViewMatrix, viewNormal);
 
+        // float w = _ScreenParams.x;
+        // float h = _ScreenParams.y;
+        // float nw = 1;
+        // float nh = h / w;
+        // return float4(1, i.texcoord.y / h, 1, 1);
+
         float eps = .0001;
 
         // mask exists depth
@@ -161,50 +199,29 @@ Shader "Hidden/Custom/SSAOHemisphere"
             return baseColor;
         }
 
-        int occludedCount = 0;
+        float occludedAcc = 0;
         int divCount = SAMPLE_COUNT;
 
         for (int j = 0; j < SAMPLE_COUNT; j++)
         {
-            float3 offset = _SamplingPoints[j];
-            offset.z = saturate(offset.z + _OcclusionBias);
-            offset = mul(GetTBNMatrix(viewNormal), offset);
+            float2x2 rot = GetRotationMatrix(_SamplingRotations[j]);
+            float2 offset = _SamplingDistances[j] * _OcclusionSampleLength;
+            float3 offsetA = float3(mul(rot, offset), 1.);
+            float3 offsetB = float3(mul(rot, -offset), 1.);
 
-            // 1: world -> view -> clip
-            // float4 offsetWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
-            // float4 offsetViewPosition = mul(_ViewMatrix, offsetWorldPosition);
-            // float4 offsetClipPosition = mul(_ViewProjectionMatrix, offsetWorldPosition);
+            float2 rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
+            float2 rawDepthB = SampleRawDepthByViewPosition(viewPosition, offsetB);
 
-            // 2: view -> clip
-            float4 offsetViewPosition = float4(viewPosition, 1.) + float4(offset, 0.) * _OcclusionSampleLength;
-            float4 offsetClipPosition = mul(_ProjectionMatrix, offsetViewPosition);
+            float3 viewPositionA = ReconstructViewPositionFromDepth(i.texcoord, rawDepthA);
+            float3 viewPositionB = ReconstructViewPositionFromDepth(i.texcoord, rawDepthB);
 
-            #if UNITY_UV_STARTS_AT_TOP
-            offsetClipPosition.y = -offsetClipPosition.y;
-            #endif
+            float dirA = normalize(viewPositionA - viewPosition);
+            float dirB = normalize(viewPositionB - viewPosition);
 
-            // TODO: reverse zを考慮してあるべき？
-            float2 samplingCoord = (offsetClipPosition.xy / offsetClipPosition.w) * 0.5 + 0.5;
-            float samplingRawDepth = SampleRawDepth(samplingCoord);
-            float3 samplingViewPosition = ReconstructViewPositionFromDepth(samplingCoord, samplingRawDepth);
-
-            // NOTE: 遠距離の場合がうまくいってないかも
-            // 現在のviewPositionとoffset済みのviewPositionが一定距離離れていたらor近すぎたら無視
-            float dist = distance(samplingViewPosition.xyz, viewPosition.xyz);
-            if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
-            {
-                // divCount = max(1, divCount - 1);
-                continue;
-            }
-
-            // 対象の点のdepth値が現在のdepth値よりも小さかったら遮蔽とみなす（= 対象の点が現在の点よりもカメラに近かったら）
-            if (samplingViewPosition.z > offsetViewPosition.z)
-            {
-                occludedCount++;
-            }
+            float angleAB = min(dot(dirA, dirB), 1.);
         }
 
-        float aoRate = (float)occludedCount / (float)divCount;
+        float aoRate = occludedAcc / (float)divCount;
 
         // NOTE: 本当は環境光のみにAO項を考慮するのがよいが、forward x post process の場合は全体にかけちゃう
         color.rgb = lerp(

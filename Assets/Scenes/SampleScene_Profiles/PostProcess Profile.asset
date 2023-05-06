@@ -1,5 +1,42 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7859704362945401675
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ec0ff233a7e4eb2956fd047ba4dbc5a, type: 3}
+  m_Name: SSAOUE4
+  m_EditorClassIdentifier: 
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  Blend:
+    overrideState: 1
+    value: 1
+  DepthOrNormal:
+    overrideState: 1
+    value: 0
+  OcclusionSampleLength:
+    overrideState: 1
+    value: 0.09
+  OcclusionMinDistance:
+    overrideState: 1
+    value: 0
+  OcclusionMaxDistance:
+    overrideState: 1
+    value: 0.31
+  OcclusionBias:
+    overrideState: 1
+    value: 0.01
+  OcclusionStrength:
+    overrideState: 1
+    value: 1
 --- !u!114 &-4250832602419124567
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -43,16 +80,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01a400740b114a62a10c1141214873a4, type: 3}
   m_Name: SSAOHemisphere
   m_EditorClassIdentifier: 
-  active: 1
+  active: 0
   enabled:
     overrideState: 1
     value: 1
   Blend:
     overrideState: 1
     value: 1
-  DepthOrNormal:
-    overrideState: 1
-    value: 0
   OcclusionSampleLength:
     overrideState: 1
     value: 0.09
@@ -83,3 +117,4 @@ MonoBehaviour:
   settings:
   - {fileID: -4250832602419124567}
   - {fileID: -409234921118481811}
+  - {fileID: -7859704362945401675}

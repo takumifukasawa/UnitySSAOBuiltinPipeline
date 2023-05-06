@@ -4,7 +4,7 @@ Shader "Hidden/Custom/SSAO"
     #include "Packages/com.unity.postprocessing/PostProcessing/Shaders/StdLib.hlsl"
 
     TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
-    TEXTURE2D_SAMPLER2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture);
+    // TEXTURE2D_SAMPLER2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture);
     TEXTURE2D_SAMPLER2D(_CameraDepthTexture, sampler_CameraDepthTexture);
 
     float _Blend;
@@ -50,35 +50,6 @@ Shader "Hidden/Custom/SSAO"
         // _ProjectionParams.z ... camera far clip
         // カメラからの距離なので linear01 depth に far clip をかけてる
         return _ProjectionParams.y + d * _ProjectionParams.z + CheckBounds(uv, d);
-    }
-
-    // ビュー空間の法線
-    float3 SampleNormal(float2 uv)
-    {
-        #if defined(SOURCE_GBUFFER)
-    float3 norm = SAMPLE_TEXTURE2D(_CameraGBufferTexture2, sampler_CameraGBufferTexture2, uv).xyz;
-    norm = norm * 2 - any(norm); // gets (0,0,0) when norm == 0
-    norm = mul((float3x3)unity_WorldToCamera, norm);
-        #if defined(VALIDATE_NORMALS)
-    norm = normalize(norm);
-        #endif
-    return norm;
-        #else
-        float4 cdn = SAMPLE_TEXTURE2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture, uv);
-        return DecodeViewNormalStereo(cdn) * float3(1.0, 1.0, -1.0);
-        #endif
-    }
-
-    float SampleDepthNormal(float2 uv, out float3 normal)
-    {
-        normal = SampleNormal(UnityStereoTransformScreenSpaceTex(uv));
-        return SampleDepth(uv);
-    }
-
-    float3 SampleViewNormal(float2 uv)
-    {
-        float4 cdn = SAMPLE_TEXTURE2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture, uv);
-        return DecodeViewNormalStereo(cdn) * float3(1., 1., 1.);
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -139,10 +110,6 @@ Shader "Hidden/Custom/SSAO"
         float3 worldPosition = ReconstructWorldPositionFromDepth(i.texcoord, rawDepth);
         float3 viewPosition = ReconstructViewPositionFromDepth(i.texcoord, rawDepth);
 
-        // test calc normal
-        // float3 viewNormal = SampleViewNormal(i.texcoord);
-        // float3 worldNormal = mul((float3x3)_InverseViewMatrix, viewNormal);
-
         float eps = .0001;
 
         // mask exists depth
@@ -154,9 +121,9 @@ Shader "Hidden/Custom/SSAO"
         int occludedCount = 0;
         int divCount = SAMPLE_COUNT;
 
-        for (int i = 0; i < SAMPLE_COUNT; i++)
+        for (int j = 0; j < SAMPLE_COUNT; j++)
         {
-            float4 offset = _SamplingPoints[i];
+            float4 offset = _SamplingPoints[j];
             offset.w = 0;
 
             // 1: world -> view -> clip
