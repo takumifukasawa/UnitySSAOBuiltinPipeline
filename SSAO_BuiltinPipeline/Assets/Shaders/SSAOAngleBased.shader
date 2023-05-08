@@ -43,7 +43,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
     float3 ReconstructWorldPositionFromDepth(float2 screenUV, float rawDepth)
     {
-        // TODO: depthはgraphicsAPIを考慮している必要があるはず
         float4 clipPos = float4(screenUV * 2.0 - 1.0, rawDepth, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
@@ -54,7 +53,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
     float3 ReconstructViewPositionFromDepth(float2 screenUV, float rawDepth)
     {
-        // TODO: depthはgraphicsAPIを考慮している必要があるはず
         float4 clipPos = float4(screenUV * 2.0 - 1.0, rawDepth, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
