@@ -141,10 +141,12 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
         float4 baseColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.texcoord);
 
+        // 1. depth を depth texture から参照する場合
         // float rawDepth = SampleRawDepth(i.texcoord);
         // float depth = Linear01Depth(rawDepth);
         // return float4(depth, depth, depth, 1.);
 
+        // 2. depth を depth normal texture から参照する場合
         float depth = 0;
         float3 viewNormal = float3(0, 0, 0);
         float4 cdn = SAMPLE_TEXTURE2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture, i.texcoord);
