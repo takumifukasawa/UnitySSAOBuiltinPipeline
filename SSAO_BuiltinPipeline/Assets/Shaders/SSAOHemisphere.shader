@@ -194,7 +194,6 @@ Shader "Hidden/Custom/SSAOHemisphere"
             float dist = distance(samplingViewPosition.xyz, viewPosition.xyz);
             if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
             {
-                // divCount = max(1, divCount - 1);
                 continue;
             }
 

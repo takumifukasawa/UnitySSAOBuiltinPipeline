@@ -24,61 +24,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
     float4 _OcclusionColor;
 
     // ------------------------------------------------------------------------------------------------
-    // ref: https://github.com/Unity-Technologies/PostProcessing/blob/v2/PostProcessing/Shaders/Builtins/ScalableAO.hlsl
-    // ------------------------------------------------------------------------------------------------
-
-    // Boundary check for depth sampler
-    // (returns a very large value if it lies out of bounds)
-    float CheckBounds(float2 uv, float d)
-    {
-        float ob = any(uv < 0) + any(uv > 1);
-        #if defined(UNITY_REVERSED_Z)
-        ob += (d <= 0.00001);
-        #else
-        ob += (d >= 0.99999);
-        #endif
-        return ob * 1e8;
-    }
-
-    // Depth/normal sampling functions
-    // ビュー空間のカメラからの距離
-    float SampleDepth(float2 uv)
-    {
-        float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE_LOD(
-            _CameraDepthTexture,
-            sampler_CameraDepthTexture,
-            UnityStereoTransformScreenSpaceTex(uv),
-            0
-        ));
-        // _ProjectionParams.z ... camera far clip
-        // カメラからの距離なので linear01 depth に far clip をかけてる
-        return _ProjectionParams.y + d * _ProjectionParams.z + CheckBounds(uv, d);
-    }
-
-    // // ビュー空間の法線
-    // float3 SampleNormal(float2 uv)
-    // {
-    //     #if defined(SOURCE_GBUFFER)
-    // float3 norm = SAMPLE_TEXTURE2D(_CameraGBufferTexture2, sampler_CameraGBufferTexture2, uv).xyz;
-    // norm = norm * 2 - any(norm); // gets (0,0,0) when norm == 0
-    // norm = mul((float3x3)unity_WorldToCamera, norm);
-    //     #if defined(VALIDATE_NORMALS)
-    // norm = normalize(norm);
-    //     #endif
-    // return norm;
-    //     #else
-    //     float4 cdn = SAMPLE_TEXTURE2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture, uv);
-    //     return DecodeViewNormalStereo(cdn) * float3(1.0, 1.0, -1.0);
-    //     #endif
-    // }
-
-    // float SampleDepthNormal(float2 uv, out float3 normal)
-    // {
-    //     normal = SampleNormal(UnityStereoTransformScreenSpaceTex(uv));
-    //     return SampleDepth(uv);
-    // }
-    
-    // ------------------------------------------------------------------------------------------------
     // ref: UnityCG.cginc
     // ------------------------------------------------------------------------------------------------
 
@@ -166,7 +111,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
         return float2x2(c, -s, s, c);
     }
 
-    float4 SampleRawDepthByViewPosition(float3 viewPosition, float3 offset)
+    float SampleRawDepthByViewPosition(float3 viewPosition, float3 offset)
     {
         // 1: world -> view -> clip
         // float4 offsetWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
@@ -198,21 +143,15 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
         // float rawDepth = SampleRawDepth(i.texcoord);
         // float depth = Linear01Depth(rawDepth);
+        // return float4(depth, depth, depth, 1.);
 
         float depth = 0;
-        float3 worldNormal = float3(0, 0, 0);
+        float3 viewNormal = float3(0, 0, 0);
         float4 cdn = SAMPLE_TEXTURE2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture, i.texcoord);
-        DecodeDepthNormal(cdn, depth, worldNormal);
+        DecodeDepthNormal(cdn, depth, viewNormal);
         float rawDepth = InverseLinear01Depth(depth);
 
-        float3 worldPosition = ReconstructWorldPositionFromDepth(i.texcoord, rawDepth);
         float3 viewPosition = ReconstructViewPositionFromDepth(i.texcoord, rawDepth);
-        float3 surfaceToCameraViewDir = -normalize(viewPosition);
-
-
-        // test calc normal
-        // float3 viewNormal = SampleViewNormal(i.texcoord);
-        // float3 worldNormal = mul((float3x3)_InverseViewMatrix, viewNormal);
 
         float eps = .0001;
 
@@ -232,14 +171,26 @@ Shader "Hidden/Custom/SSAOAngleBased"
             float3 offsetA = float3(mul(rot, offset), 0.);
             float3 offsetB = float3(-offsetA.xy, 0.);
 
-            float2 rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
-            float2 rawDepthB = SampleRawDepthByViewPosition(viewPosition, offsetB);
+            float rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
+            float rawDepthB = SampleRawDepthByViewPosition(viewPosition, offsetB);
+            
+            float depthA = Linear01Depth(rawDepthA);
+            float depthB = Linear01Depth(rawDepthB);
 
             float3 viewPositionA = ReconstructViewPositionFromDepth(i.texcoord, rawDepthA);
             float3 viewPositionB = ReconstructViewPositionFromDepth(i.texcoord, rawDepthB);
 
             float distA = distance(viewPositionA.xyz, viewPosition.xyz);
             float distB = distance(viewPositionA.xyz, viewPosition.xyz);
+            
+            if(abs(depth - depthA) < _OcclusionBias)
+            {
+                continue;
+            }
+            if(abs(depth - depthB) < _OcclusionBias)
+            {
+                continue;
+            }
 
             if (distA < _OcclusionMinDistance || _OcclusionMaxDistance < distA)
             {
@@ -250,17 +201,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
                 continue;
             }
 
-            // pattern_1
-            // float3 dirA = normalize(viewPositionA - viewPosition);
-            // float3 dirB = normalize(viewPositionB - viewPosition);
-            // float dotA = dot(dirA, surfaceToCameraViewDir);
-            // float dotB = dot(dirB, surfaceToCameraViewDir);
-            // float angleA = acos(dotA);
-            // float angleB = acos(dotB);
-            // float ao = 1. - saturate(min((angleA + angleB) / PI, 1.));
-
-            // pattern_2
-            // TODO: distanceが分母になる？
             float tanA = (viewPositionA.z - viewPosition.z) / distance(viewPositionA.xy, viewPosition.xy);
             float tanB = (viewPositionB.z - viewPosition.z) / distance(viewPositionB.xy, viewPosition.xy);
             // float tanA = distance(viewPositionA.xy, viewPosition.xy) / (viewPositionA.z - viewPosition.z);
@@ -268,12 +208,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
             float angleA = atan(tanA);
             float angleB = atan(tanB);
             float ao = saturate(min((angleA + angleB) / PI, 1.));
-
-            // pattern_3
-            // float3 dirA = normalize(viewPositionA - viewPosition);
-            // float3 dirB = normalize(viewPositionB - viewPosition);
-            // float dotDirs = dot(dirA, dirB);
-            // float ao = saturate(min(1. - dotDirs, 1.));
 
             occludedAcc += ao;
         }
