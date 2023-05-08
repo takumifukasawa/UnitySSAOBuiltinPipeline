@@ -21,12 +21,15 @@ public sealed class SSAOHemisphere : PostProcessEffectSettings
 
     [FormerlySerializedAs("occlusion max distance")] [Range(0f, 5f), Tooltip("occlusion max distance")]
     public FloatParameter OcclusionMaxDistance = new FloatParameter { value = 5f };
-    
+
     [FormerlySerializedAs("occlusion bias")] [Range(0f, 1f), Tooltip("occlusion bias")]
     public FloatParameter OcclusionBias = new FloatParameter { value = 0.001f };
-    
+
     [FormerlySerializedAs("occlusion strength")] [Range(0f, 1f), Tooltip("occlusion strength")]
     public FloatParameter OcclusionStrength = new FloatParameter { value = 1f };
+
+    [FormerlySerializedAs("occlusion color")] [Tooltip("occlusion color")]
+    public ColorParameter OcclusionColor = new ColorParameter { value = Color.black };
 }
 
 public sealed class SSAOHemisphereRenderer : PostProcessEffectRenderer<SSAOHemisphere>
@@ -71,6 +74,8 @@ public sealed class SSAOHemisphereRenderer : PostProcessEffectRenderer<SSAOHemis
         sheet.properties.SetFloat("_OcclusionMaxDistance", settings.OcclusionMaxDistance);
         sheet.properties.SetFloat("_OcclusionBias", settings.OcclusionBias);
         sheet.properties.SetFloat("_OcclusionStrength", settings.OcclusionStrength);
+
+        sheet.properties.SetColor("_OcclusionColor", settings.OcclusionColor);
 
         context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
     }

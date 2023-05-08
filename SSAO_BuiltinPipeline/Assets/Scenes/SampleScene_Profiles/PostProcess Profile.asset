@@ -37,6 +37,9 @@ MonoBehaviour:
   OcclusionStrength:
     overrideState: 1
     value: 1
+  OcclusionColor:
+    overrideState: 0
+    value: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &-4250832602419124567
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -68,6 +71,9 @@ MonoBehaviour:
   OcclusionStrength:
     overrideState: 1
     value: 1
+  OcclusionColor:
+    overrideState: 0
+    value: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &-409234921118481811
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -102,6 +108,9 @@ MonoBehaviour:
   OcclusionStrength:
     overrideState: 1
     value: 1
+  OcclusionColor:
+    overrideState: 0
+    value: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0

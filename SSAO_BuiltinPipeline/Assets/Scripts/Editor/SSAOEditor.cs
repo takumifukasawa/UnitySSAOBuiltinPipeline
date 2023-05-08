@@ -8,6 +8,7 @@ public sealed class SSAOEditor : PostProcessEffectEditor<SSAO>
     SerializedParameterOverride m_OcclusionMinDistance;
     SerializedParameterOverride m_OcclusionMaxDistance;
     SerializedParameterOverride m_OcclusionStrength;
+    SerializedParameterOverride m_OcclusionColor;
 
     public override void OnEnable()
     {
@@ -16,6 +17,7 @@ public sealed class SSAOEditor : PostProcessEffectEditor<SSAO>
         m_OcclusionMinDistance = FindParameterOverride(x => x.OcclusionMinDistance);
         m_OcclusionMaxDistance = FindParameterOverride(x => x.OcclusionMaxDistance);
         m_OcclusionStrength = FindParameterOverride(x => x.OcclusionStrength);
+        m_OcclusionColor = FindParameterOverride(x => x.OcclusionColor);
     }
 
     public override void OnInspectorGUI()
@@ -25,5 +27,6 @@ public sealed class SSAOEditor : PostProcessEffectEditor<SSAO>
         PropertyField(m_OcclusionMinDistance);
         PropertyField(m_OcclusionMaxDistance);
         PropertyField(m_OcclusionStrength);
+        PropertyField(m_OcclusionColor);
     }
 }

@@ -22,6 +22,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
     float _OcclusionMaxDistance;
     float _OcclusionBias;
     float _OcclusionStrength;
+    float4 _OcclusionColor;
 
     // ------------------------------------------------------------------------------------------------
     // ref: https://github.com/Unity-Technologies/PostProcessing/blob/v2/PostProcessing/Shaders/Builtins/ScalableAO.hlsl
@@ -267,9 +268,11 @@ Shader "Hidden/Custom/SSAOAngleBased"
         // NOTE: 本当は環境光のみにAO項を考慮するのがよいが、forward x post process の場合は全体にかけちゃう
         color.rgb = lerp(
             baseColor,
-            float3(0., 0., 0.),
+            _OcclusionColor,
             aoRate * _OcclusionStrength
         );
+
+        color.rgb = lerp(baseColor, color.rgb, _Blend);
 
         color.a = 1;
         return color;

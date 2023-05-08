@@ -22,12 +22,15 @@ public sealed class SSAOAngleBased : PostProcessEffectSettings
 
     [FormerlySerializedAs("occlusion max distance")] [Range(0f, 5f), Tooltip("occlusion max distance")]
     public FloatParameter OcclusionMaxDistance = new FloatParameter { value = 5f };
-    
+
     [FormerlySerializedAs("occlusion bias")] [Range(0f, 1f), Tooltip("occlusion bias")]
     public FloatParameter OcclusionBias = new FloatParameter { value = 0.001f };
-    
+
     [FormerlySerializedAs("occlusion strength")] [Range(0f, 1f), Tooltip("occlusion strength")]
     public FloatParameter OcclusionStrength = new FloatParameter { value = 1f };
+
+    [FormerlySerializedAs("occlusion color")] [Tooltip("occlusion color")]
+    public ColorParameter OcclusionColor = new ColorParameter { value = Color.black };
 }
 
 public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngleBased>
@@ -55,7 +58,7 @@ public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngle
             var rotList = new List<float>();
             var lenList = new List<float>();
             var sampleCount = 6;
-            for(int i = 0; i < sampleCount; i++)
+            for (int i = 0; i < sampleCount; i++)
             {
                 // 任意の角度. できるだけ均等にバラけていた方がよい
                 var pieceRad = (Mathf.PI * 2) / sampleCount;
@@ -73,6 +76,7 @@ public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngle
                 );
                 lenList.Add(len);
             }
+
             sheet.properties.SetFloatArray("_SamplingRotations", rotList.ToArray());
             sheet.properties.SetFloatArray("_SamplingDistances", lenList.ToArray());
             _isCreatedSamplingPoints = true;
@@ -90,6 +94,8 @@ public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngle
         sheet.properties.SetFloat("_OcclusionMaxDistance", settings.OcclusionMaxDistance);
         sheet.properties.SetFloat("_OcclusionBias", settings.OcclusionBias);
         sheet.properties.SetFloat("_OcclusionStrength", settings.OcclusionStrength);
+
+        sheet.properties.SetColor("_OcclusionColor", settings.OcclusionColor);
 
         context.command.BlitFullscreenTriangle(context.source, context.destination, sheet, 0);
     }
