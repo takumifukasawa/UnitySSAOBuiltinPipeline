@@ -11,9 +11,6 @@ public sealed class SSAOAngleBased : PostProcessEffectSettings
     [FormerlySerializedAs("blend")] [Range(0f, 1f), Tooltip("SSAO effect intensity.")]
     public FloatParameter Blend = new FloatParameter { value = 0.5f };
 
-    [FormerlySerializedAs("depthOrNormal")] [Range(0f, 1f), Tooltip("lerp, 0: depth ~ 1: normal")]
-    public FloatParameter DepthOrNormal = new FloatParameter { value = 0.5f };
-
     [FormerlySerializedAs("occlusion sample length")] [Range(0.01f, 5f), Tooltip("occ sample length")]
     public FloatParameter OcclusionSampleLength = new FloatParameter { value = 1f };
 
@@ -52,7 +49,6 @@ public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngle
 
         var sheet = context.propertySheets.Get(Shader.Find("Hidden/Custom/SSAOAngleBased"));
         sheet.properties.SetFloat("_Blend", settings.Blend);
-        sheet.properties.SetFloat("_DepthOrNormal", settings.DepthOrNormal);
         if (!_isCreatedSamplingPoints)
         {
             var rotList = new List<float>();

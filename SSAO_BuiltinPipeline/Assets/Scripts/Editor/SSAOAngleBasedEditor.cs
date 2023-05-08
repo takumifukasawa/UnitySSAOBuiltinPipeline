@@ -4,7 +4,6 @@
 public sealed class SSAOAngleBasedEditor : PostProcessEffectEditor<SSAOAngleBased>
 {
     SerializedParameterOverride m_Blend;
-    SerializedParameterOverride m_DepthOrNormal;
     SerializedParameterOverride m_OcclusionSampleLength;
     SerializedParameterOverride m_OcclusionMinDistance;
     SerializedParameterOverride m_OcclusionMaxDistance;
@@ -15,7 +14,6 @@ public sealed class SSAOAngleBasedEditor : PostProcessEffectEditor<SSAOAngleBase
     public override void OnEnable()
     {
         m_Blend = FindParameterOverride(x => x.Blend);
-        m_DepthOrNormal = FindParameterOverride(x => x.DepthOrNormal);
         m_OcclusionSampleLength = FindParameterOverride(x => x.OcclusionSampleLength);
         m_OcclusionMinDistance = FindParameterOverride(x => x.OcclusionMinDistance);
         m_OcclusionMaxDistance = FindParameterOverride(x => x.OcclusionMaxDistance);
@@ -27,7 +25,6 @@ public sealed class SSAOAngleBasedEditor : PostProcessEffectEditor<SSAOAngleBase
     public override void OnInspectorGUI()
     {
         PropertyField(m_Blend);
-        PropertyField(m_DepthOrNormal);
         PropertyField(m_OcclusionSampleLength);
         PropertyField(m_OcclusionMinDistance);
         PropertyField(m_OcclusionMaxDistance);
