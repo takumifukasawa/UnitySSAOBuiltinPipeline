@@ -205,8 +205,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
             float tanA = (viewPositionA.z - viewPosition.z) / distance(viewPositionA.xy, viewPosition.xy);
             float tanB = (viewPositionB.z - viewPosition.z) / distance(viewPositionB.xy, viewPosition.xy);
-            // float tanA = distance(viewPositionA.xy, viewPosition.xy) / (viewPositionA.z - viewPosition.z);
-            // float tanB = distance(viewPositionB.xy, viewPosition.xy) / (viewPositionB.z - viewPosition.z);
             float angleA = atan(tanA);
             float angleB = atan(tanB);
             float ao = saturate(min((angleA + angleB) / PI, 1.));
