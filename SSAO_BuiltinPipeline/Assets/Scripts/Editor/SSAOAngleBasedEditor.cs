@@ -9,6 +9,7 @@ public sealed class SSAOAngleBasedEditor : PostProcessEffectEditor<SSAOAngleBase
     SerializedParameterOverride m_OcclusionMaxDistance;
     SerializedParameterOverride m_OcclusionBias;
     SerializedParameterOverride m_OcclusionStrength;
+    SerializedParameterOverride m_OcclusionPower;
     SerializedParameterOverride m_OcclusionColor;
 
     public override void OnEnable()
@@ -19,6 +20,7 @@ public sealed class SSAOAngleBasedEditor : PostProcessEffectEditor<SSAOAngleBase
         m_OcclusionMaxDistance = FindParameterOverride(x => x.OcclusionMaxDistance);
         m_OcclusionBias = FindParameterOverride(x => x.OcclusionBias);
         m_OcclusionStrength = FindParameterOverride(x => x.OcclusionStrength);
+        m_OcclusionPower = FindParameterOverride(x => x.OcclusionPower);
         m_OcclusionColor = FindParameterOverride(x => x.OcclusionColor);
     }
 
@@ -30,6 +32,7 @@ public sealed class SSAOAngleBasedEditor : PostProcessEffectEditor<SSAOAngleBase
         PropertyField(m_OcclusionMaxDistance);
         PropertyField(m_OcclusionBias);
         PropertyField(m_OcclusionStrength);
+        PropertyField(m_OcclusionPower);
         PropertyField(m_OcclusionColor);
     }
 }

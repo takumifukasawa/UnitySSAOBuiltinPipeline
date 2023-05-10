@@ -23,8 +23,11 @@ public sealed class SSAOAngleBased : PostProcessEffectSettings
     [FormerlySerializedAs("occlusion bias")] [Range(0f, 1f), Tooltip("occlusion bias")]
     public FloatParameter OcclusionBias = new FloatParameter { value = 0.001f };
 
-    [FormerlySerializedAs("occlusion strength")] [Range(0f, 1f), Tooltip("occlusion strength")]
+    [FormerlySerializedAs("occlusion strength")] [Range(0f, 4f), Tooltip("occlusion strength")]
     public FloatParameter OcclusionStrength = new FloatParameter { value = 1f };
+    
+    [FormerlySerializedAs("occlusion power")] [Range(0.1f, 4f), Tooltip("occlusion power")]
+    public FloatParameter OcclusionPower = new FloatParameter { value = 1f };
 
     [FormerlySerializedAs("occlusion color")] [Tooltip("occlusion color")]
     public ColorParameter OcclusionColor = new ColorParameter { value = Color.black };
@@ -91,6 +94,7 @@ public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngle
         sheet.properties.SetFloat("_OcclusionMaxDistance", settings.OcclusionMaxDistance);
         sheet.properties.SetFloat("_OcclusionBias", settings.OcclusionBias);
         sheet.properties.SetFloat("_OcclusionStrength", settings.OcclusionStrength);
+        sheet.properties.SetFloat("_OcclusionPower", settings.OcclusionPower);
 
         sheet.properties.SetColor("_OcclusionColor", settings.OcclusionColor);
 

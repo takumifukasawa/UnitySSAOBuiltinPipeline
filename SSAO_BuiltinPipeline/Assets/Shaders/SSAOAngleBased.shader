@@ -21,6 +21,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
     float _OcclusionMaxDistance;
     float _OcclusionBias;
     float _OcclusionStrength;
+    float _OcclusionPower;
     float4 _OcclusionColor;
 
     // ------------------------------------------------------------------------------------------------
@@ -173,9 +174,8 @@ Shader "Hidden/Custom/SSAOAngleBased"
         for (int j = 0; j < samplingCount; j++)
         {
             float2x2 rot = GetRotationMatrix(_SamplingRotations[j]);
-            float2 offset = _SamplingDistances[j] * _OcclusionSampleLength;
-            float3 offsetA = float3(mul(rot, offset), 0.);
-            // float3 offsetB = float3(mul(rot + 1.57, offset), 0.);
+            float offsetLen = _SamplingDistances[j] * _OcclusionSampleLength;
+            float3 offsetA = float3(mul(rot, float2(1, 0)), 0.) * offsetLen;
             float3 offsetB = -offsetA;
 
             float rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
@@ -187,17 +187,17 @@ Shader "Hidden/Custom/SSAOAngleBased"
             float3 viewPositionA = ReconstructViewPositionFromDepth(i.texcoord, rawDepthA);
             float3 viewPositionB = ReconstructViewPositionFromDepth(i.texcoord, rawDepthB);
 
-            float distA = distance(viewPositionA.xyz, viewPosition.xyz);
-            float distB = distance(viewPositionB.xyz, viewPosition.xyz);
+            float distA = distance(viewPositionA, viewPosition);
+            float distB = distance(viewPositionB, viewPosition);
             
-            // if(abs(depth - depthA) < _OcclusionBias)
-            // {
-            //     continue;
-            // }
-            // if(abs(depth - depthB) < _OcclusionBias)
-            // {
-            //     continue;
-            // }
+            if(abs(depth - depthA) < _OcclusionBias)
+            {
+                continue;
+            }
+            if(abs(depth - depthB) < _OcclusionBias)
+            {
+                continue;
+            }
 
             if (distA < _OcclusionMinDistance || _OcclusionMaxDistance < distA)
             {
@@ -213,7 +213,6 @@ Shader "Hidden/Custom/SSAOAngleBased"
             // float tanB = (viewPositionB.z - viewPosition.z) / distance(viewPositionB.xy, viewPosition.xy);
             // float angleA = atan(tanA);
             // float angleB = atan(tanB);
-            // // float ao = saturate(min((angleA + angleB) / PI, 1.));
             // float ao = min((angleA + angleB) / PI, 1.);
 
             // pattern_2: compare with surface to camera
@@ -231,8 +230,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
         color.rgb = lerp(
             baseColor,
             _OcclusionColor,
-            saturate(aoRate * _OcclusionStrength)
-            // pow(saturate(aoRate * _OcclusionStrength), 1.)
+            saturate(pow(saturate(aoRate), _OcclusionPower) * _OcclusionStrength)
         );
 
         color.rgb = lerp(baseColor, color.rgb, _Blend);

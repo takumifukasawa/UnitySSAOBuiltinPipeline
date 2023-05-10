@@ -456,7 +456,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.1
-  far clip plane: 20
+  far clip plane: 40
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -483,7 +483,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 5, z: -14.09}
+  m_LocalPosition: {x: -0.36, y: 5, z: -13.36}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -756,14 +756,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1614117296}
-  m_LocalRotation: {x: -0.6657787, y: 0.23819897, z: -0.23819897, w: 0.6657787}
-  m_LocalPosition: {x: 0, y: 5, z: 5}
+  m_LocalRotation: {x: -0.40355852, y: 0.2540886, z: 0.095830284, w: 0.8737255}
+  m_LocalPosition: {x: 0, y: 5, z: 2.91}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 239051419}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: -50.628, y: 90, z: -90}
+  m_LocalEulerAnglesHint: {x: -48.929, y: 33.924, z: -3.283}
 --- !u!1 &1637810244
 GameObject:
   m_ObjectHideFlags: 0
@@ -951,7 +951,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1659713662}
   m_LocalRotation: {x: -0, y: 0.3451785, z: -0, w: 0.9385371}
-  m_LocalPosition: {x: 2.01, y: 2.5, z: 0.74}
+  m_LocalPosition: {x: 1.53, y: 2.5, z: -1.13}
   m_LocalScale: {x: 3, y: 5, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1081,14 +1081,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1960243632}
-  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 5, y: 5, z: 0}
+  m_LocalRotation: {x: -0.56058085, y: 0.43098623, z: 0.43098623, w: 0.56058085}
+  m_LocalPosition: {x: 5, y: 5, z: 1.71}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 239051419}
   m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 90}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 75.108}
 --- !u!64 &1960243634
 MeshCollider:
   m_ObjectHideFlags: 0
