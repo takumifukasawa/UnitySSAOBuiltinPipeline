@@ -208,7 +208,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
                 continue;
             }
 
-            // pattern_1: two angle
+            // pattern_1: calc angle by view z
             // float tanA = (viewPositionA.z - viewPosition.z) / distance(viewPositionA.xy, viewPosition.xy);
             // float tanB = (viewPositionB.z - viewPosition.z) / distance(viewPositionB.xy, viewPosition.xy);
             // float angleA = atan(tanA);
