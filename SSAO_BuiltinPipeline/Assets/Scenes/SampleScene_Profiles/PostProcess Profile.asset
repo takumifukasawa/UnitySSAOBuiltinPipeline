@@ -21,22 +21,22 @@ MonoBehaviour:
     value: 1
   OcclusionSampleLength:
     overrideState: 1
-    value: 0.1
+    value: 0.12
   OcclusionMinDistance:
     overrideState: 1
-    value: 0
+    value: 0.001
   OcclusionMaxDistance:
     overrideState: 1
-    value: 0.31
+    value: 1.1
   OcclusionBias:
     overrideState: 1
-    value: 0.00001
+    value: 0
   OcclusionStrength:
     overrideState: 1
     value: 1
   OcclusionColor:
     overrideState: 1
-    value: {r: 0, g: 0, b: 0, a: 1}
+    value: {r: 1, g: 0, b: 0, a: 1}
 --- !u!114 &-4250832602419124567
 MonoBehaviour:
   m_ObjectHideFlags: 3

@@ -43,6 +43,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
     float3 ReconstructWorldPositionFromDepth(float2 screenUV, float rawDepth)
     {
+        // TODO: depthはgraphicsAPIを考慮している必要があるはず
         float4 clipPos = float4(screenUV * 2.0 - 1.0, rawDepth, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
@@ -53,6 +54,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
     float3 ReconstructViewPositionFromDepth(float2 screenUV, float rawDepth)
     {
+        // TODO: depthはgraphicsAPIを考慮している必要があるはず
         float4 clipPos = float4(screenUV * 2.0 - 1.0, rawDepth, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
         clipPos.y = -clipPos.y;
@@ -117,7 +119,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
         // float4 offsetClipPosition = mul(_ViewProjectionMatrix, offsetWorldPosition);
 
         // 2: view -> clip
-        float4 offsetViewPosition = float4(viewPosition, 1.) + float4(offset, 0.);
+        float4 offsetViewPosition = float4(viewPosition + offset, 1.);
         float4 offsetClipPosition = mul(_ProjectionMatrix, offsetViewPosition);
 
         #if UNITY_UV_STARTS_AT_TOP
@@ -153,6 +155,10 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
         float3 viewPosition = ReconstructViewPositionFromDepth(i.texcoord, rawDepth);
 
+        // return float4(viewPosition, 1.);
+        // return float4(rawDepth, rawDepth, rawDepth, 1.);
+        // return float4(depth, depth, depth, 1.);
+
         float eps = .0001;
 
         // mask exists depth
@@ -169,7 +175,8 @@ Shader "Hidden/Custom/SSAOAngleBased"
             float2x2 rot = GetRotationMatrix(_SamplingRotations[j]);
             float2 offset = _SamplingDistances[j] * _OcclusionSampleLength;
             float3 offsetA = float3(mul(rot, offset), 0.);
-            float3 offsetB = float3(-offsetA.xy, 0.);
+            // float3 offsetB = float3(mul(rot + 1.57, offset), 0.);
+            float3 offsetB = -offsetA;
 
             float rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
             float rawDepthB = SampleRawDepthByViewPosition(viewPosition, offsetB);
@@ -181,16 +188,16 @@ Shader "Hidden/Custom/SSAOAngleBased"
             float3 viewPositionB = ReconstructViewPositionFromDepth(i.texcoord, rawDepthB);
 
             float distA = distance(viewPositionA.xyz, viewPosition.xyz);
-            float distB = distance(viewPositionA.xyz, viewPosition.xyz);
+            float distB = distance(viewPositionB.xyz, viewPosition.xyz);
             
-            if(abs(depth - depthA) < _OcclusionBias)
-            {
-                continue;
-            }
-            if(abs(depth - depthB) < _OcclusionBias)
-            {
-                continue;
-            }
+            // if(abs(depth - depthA) < _OcclusionBias)
+            // {
+            //     continue;
+            // }
+            // if(abs(depth - depthB) < _OcclusionBias)
+            // {
+            //     continue;
+            // }
 
             if (distA < _OcclusionMinDistance || _OcclusionMaxDistance < distA)
             {
@@ -201,11 +208,19 @@ Shader "Hidden/Custom/SSAOAngleBased"
                 continue;
             }
 
-            float tanA = (viewPositionA.z - viewPosition.z) / distance(viewPositionA.xy, viewPosition.xy);
-            float tanB = (viewPositionB.z - viewPosition.z) / distance(viewPositionB.xy, viewPosition.xy);
-            float angleA = atan(tanA);
-            float angleB = atan(tanB);
-            float ao = saturate(min((angleA + angleB) / PI, 1.));
+            // pattern_1: two angle
+            // float tanA = (viewPositionA.z - viewPosition.z) / distance(viewPositionA.xy, viewPosition.xy);
+            // float tanB = (viewPositionB.z - viewPosition.z) / distance(viewPositionB.xy, viewPosition.xy);
+            // float angleA = atan(tanA);
+            // float angleB = atan(tanB);
+            // // float ao = saturate(min((angleA + angleB) / PI, 1.));
+            // float ao = min((angleA + angleB) / PI, 1.);
+
+            // pattern_2: compare with surface to camera
+            float3 surfaceToCameraDir = -normalize(viewPosition);
+            float dotA = dot(normalize(viewPositionA - viewPosition), surfaceToCameraDir);
+            float dotB = dot(normalize(viewPositionB - viewPosition), surfaceToCameraDir);
+            float ao = (dotA + dotB) * .5;
 
             occludedAcc += ao;
         }
@@ -216,7 +231,8 @@ Shader "Hidden/Custom/SSAOAngleBased"
         color.rgb = lerp(
             baseColor,
             _OcclusionColor,
-            aoRate * _OcclusionStrength
+            saturate(aoRate * _OcclusionStrength)
+            // pow(saturate(aoRate * _OcclusionStrength), 1.)
         );
 
         color.rgb = lerp(baseColor, color.rgb, _Blend);

@@ -70,6 +70,7 @@ public sealed class SSAOAngleBasedRenderer : PostProcessEffectRenderer<SSAOAngle
                     baseLen + pieceLen * i,
                     baseLen + pieceLen * (i + 1)
                 );
+                Debug.Log($"piece rad: {pieceRad}, rad: {rad}, base len: {baseLen}, piece len: {pieceLen}, len: {len}");
                 lenList.Add(len);
             }
 
