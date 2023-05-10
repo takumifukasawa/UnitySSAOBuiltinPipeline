@@ -125,12 +125,12 @@ Shader "Hidden/Custom/SSAO"
             float4 offset = _SamplingPoints[j];
             offset.w = 0;
 
-            // 1: world -> view -> clip
+            // pattern_1: world -> view -> clip
             // float4 offsetWorldPosition = float4(worldPosition, 1.) + offset * _OcclusionSampleLength;
             // float4 offsetViewPosition = mul(_ViewMatrix, offsetWorldPosition);
             // float4 offsetClipPosition = mul(_ViewProjectionMatrix, offsetWorldPosition);
 
-            // 2: view -> clip
+            // pattern_2: view -> clip
             float4 offsetViewPosition = float4(viewPosition, 1.) + offset * _OcclusionSampleLength;
             float4 offsetClipPosition = mul(_ProjectionMatrix, offsetViewPosition);
 
@@ -138,17 +138,14 @@ Shader "Hidden/Custom/SSAO"
             offsetClipPosition.y = -offsetClipPosition.y;
             #endif
 
-            // TODO: reverse zを考慮してあるべき？
             float2 samplingCoord = (offsetClipPosition.xy / offsetClipPosition.w) * 0.5 + 0.5;
             float samplingRawDepth = SampleRawDepth(samplingCoord);
             float3 samplingViewPosition = ReconstructViewPositionFromDepth(samplingCoord, samplingRawDepth);
 
-            // NOTE: 遠距離の場合がうまくいってないかも
             // 現在のviewPositionとoffset済みのviewPositionが一定距離離れていたらor近すぎたら無視
             float dist = distance(samplingViewPosition.xyz, viewPosition.xyz);
             if (dist < _OcclusionMinDistance || _OcclusionMaxDistance < dist)
             {
-                // divCount = max(1, divCount - 1);
                 continue;
             }
 

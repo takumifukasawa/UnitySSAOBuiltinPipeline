@@ -180,7 +180,7 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
             float rawDepthA = SampleRawDepthByViewPosition(viewPosition, offsetA);
             float rawDepthB = SampleRawDepthByViewPosition(viewPosition, offsetB);
-            
+
             float depthA = Linear01Depth(rawDepthA);
             float depthB = Linear01Depth(rawDepthB);
 
@@ -189,12 +189,12 @@ Shader "Hidden/Custom/SSAOAngleBased"
 
             float distA = distance(viewPositionA, viewPosition);
             float distB = distance(viewPositionB, viewPosition);
-            
-            if(abs(depth - depthA) < _OcclusionBias)
+
+            if (abs(depth - depthA) < _OcclusionBias)
             {
                 continue;
             }
-            if(abs(depth - depthB) < _OcclusionBias)
+            if (abs(depth - depthB) < _OcclusionBias)
             {
                 continue;
             }
