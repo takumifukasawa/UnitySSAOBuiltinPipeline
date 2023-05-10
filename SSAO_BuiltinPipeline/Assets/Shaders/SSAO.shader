@@ -4,7 +4,6 @@ Shader "Hidden/Custom/SSAO"
     #include "Packages/com.unity.postprocessing/PostProcessing/Shaders/StdLib.hlsl"
 
     TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
-    // TEXTURE2D_SAMPLER2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture);
     TEXTURE2D_SAMPLER2D(_CameraDepthTexture, sampler_CameraDepthTexture);
 
     float _Blend;
@@ -20,38 +19,6 @@ Shader "Hidden/Custom/SSAO"
     float _OcclusionMaxDistance;
     float _OcclusionStrength;
     float4 _OcclusionColor;
-
-    // ------------------------------------------------------------------------------------------------
-    // ref: https://github.com/Unity-Technologies/PostProcessing/blob/v2/PostProcessing/Shaders/Builtins/ScalableAO.hlsl
-    // ------------------------------------------------------------------------------------------------
-
-    // Boundary check for depth sampler
-    // (returns a very large value if it lies out of bounds)
-    float CheckBounds(float2 uv, float d)
-    {
-        float ob = any(uv < 0) + any(uv > 1);
-        #if defined(UNITY_REVERSED_Z)
-        ob += (d <= 0.00001);
-        #else
-        ob += (d >= 0.99999);
-        #endif
-        return ob * 1e8;
-    }
-
-    // Depth/normal sampling functions
-    // ビュー空間のカメラからの距離
-    float SampleDepth(float2 uv)
-    {
-        float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE_LOD(
-            _CameraDepthTexture,
-            sampler_CameraDepthTexture,
-            UnityStereoTransformScreenSpaceTex(uv),
-            0
-        ));
-        // _ProjectionParams.z ... camera far clip
-        // カメラからの距離なので linear01 depth に far clip をかけてる
-        return _ProjectionParams.y + d * _ProjectionParams.z + CheckBounds(uv, d);
-    }
 
     // ------------------------------------------------------------------------------------------------
 

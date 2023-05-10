@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ec0ff233a7e4eb2956fd047ba4dbc5a, type: 3}
   m_Name: SSAOUE4
   m_EditorClassIdentifier: 
-  active: 1
+  active: 0
   enabled:
     overrideState: 1
     value: 1

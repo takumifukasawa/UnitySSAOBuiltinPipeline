@@ -23,59 +23,6 @@ Shader "Hidden/Custom/SSAOHemisphere"
     float4 _OcclusionColor;
 
     // ------------------------------------------------------------------------------------------------
-    // ref: https://github.com/Unity-Technologies/PostProcessing/blob/v2/PostProcessing/Shaders/Builtins/ScalableAO.hlsl
-    // ------------------------------------------------------------------------------------------------
-
-    // Boundary check for depth sampler
-    // (returns a very large value if it lies out of bounds)
-    float CheckBounds(float2 uv, float d)
-    {
-        float ob = any(uv < 0) + any(uv > 1);
-        #if defined(UNITY_REVERSED_Z)
-        ob += (d <= 0.00001);
-        #else
-        ob += (d >= 0.99999);
-        #endif
-        return ob * 1e8;
-    }
-
-    // Depth/normal sampling functions
-    // ビュー空間のカメラからの距離
-    float SampleDepth(float2 uv)
-    {
-        float d = Linear01Depth(SAMPLE_DEPTH_TEXTURE_LOD(
-            _CameraDepthTexture,
-            sampler_CameraDepthTexture,
-            UnityStereoTransformScreenSpaceTex(uv),
-            0
-        ));
-        // _ProjectionParams.z ... camera far clip
-        // カメラからの距離なので linear01 depth に far clip をかけてる
-        return _ProjectionParams.y + d * _ProjectionParams.z + CheckBounds(uv, d);
-    }
-
-    // ビュー空間の法線
-    float3 SampleNormal(float2 uv)
-    {
-        #if defined(SOURCE_GBUFFER)
-    float3 norm = SAMPLE_TEXTURE2D(_CameraGBufferTexture2, sampler_CameraGBufferTexture2, uv).xyz;
-    norm = norm * 2 - any(norm); // gets (0,0,0) when norm == 0
-    norm = mul((float3x3)unity_WorldToCamera, norm);
-        #if defined(VALIDATE_NORMALS)
-    norm = normalize(norm);
-        #endif
-    return norm;
-        #else
-        float4 cdn = SAMPLE_TEXTURE2D(_CameraDepthNormalsTexture, sampler_CameraDepthNormalsTexture, uv);
-        return DecodeViewNormalStereo(cdn) * float3(1.0, 1.0, -1.0);
-        #endif
-    }
-
-    float SampleDepthNormal(float2 uv, out float3 normal)
-    {
-        normal = SampleNormal(UnityStereoTransformScreenSpaceTex(uv));
-        return SampleDepth(uv);
-    }
 
     float3 SampleViewNormal(float2 uv)
     {
